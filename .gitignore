@@ -1,9 +1,0 @@
-venv/
-Pipfile
-Pipfile.lock
-.env
-venv
-.venv
-__pycache__/
-ngrok.yml
-
