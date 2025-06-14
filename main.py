@@ -28,7 +28,7 @@ def webapp_builder() -> InlineKeyboardBuilder:
     builder = InlineKeyboardBuilder()
     builder.button(
         text="Click", web_app=WebAppInfo(
-        url="..."), # Replace with your web app URL
+        url="https://5ka-front.netlify.app/index"), # Replace with your web app URL
         )  
     
     return builder.as_markup()
@@ -58,7 +58,7 @@ dp.include_router(router)
     
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await bot.set_webhook(...)
+    await bot.set_webhook("https://fiveka-web-app.onrender.com/telegram")
     yield
     
 
