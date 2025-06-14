@@ -39,3 +39,107 @@
 .nav-item.active img {
   filter: brightness(1);
 }
+
+
+#map {
+  width: 100%;
+  height: 500px;
+  position: relative;
+}
+
+.marker-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 30px;
+  height: 50px;
+  background: url('https://img.icons8.com/ios-filled/50/marker.png') no-repeat center;
+  background-size: contain;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 10;
+}
+
+#address {
+  font-weight: bold;
+  margin: 30px 0 0 10px;
+  font-size: 24px;
+}
+
+.header {
+  position: fixed;    /* фиксируем хедер сверху */
+  border-radius: 0 0 15px 15px;
+  top: 0;
+  left: 0;
+  width: 100%;       /* растягиваем на всю ширину окна */
+  height: 75px;      /* высота плашки */
+  background-color: #ffffff; /* фон, например, как у bottom-nav-up */
+  color: rgb(0, 0, 0);      /* цвет текста */
+  display: flex;
+  align-items: center; /* вертикальное центрирование текста */
+  padding: 0 20px;   /* внутренние отступы слева и справа */
+  z-index: 1000;     /* чтобы хедер был поверх другого контента */
+  box-sizing: border-box;
+  font-family: "Istok Web", sans-serif;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.header-content {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 180px; 
+}
+
+.lower {
+  padding: auto;
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  height: 443px;
+  background-color: #ffffff;
+  border-radius: 16px 15px 0 0;
+  align-items: center;
+
+  z-index: 500;
+}
+
+.promo-button {
+  background-color: #eb2316; /* Синий цвет кнопки */
+  color: white;
+  
+  font-size: 16px;
+  font-weight: 500px;
+  padding: 16px 160px;
+  border: none;
+  border-radius: 15px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+input {
+  border: none;
+  position: relative;
+  padding-bottom: 4px 0; /* чтобы линия не налезала на текст */
+  outline: none;  
+  background: transparent;
+  border-bottom: 0.5px solid rgb(221, 221, 221);
+}
+
+
+input::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;             /* центрируем линию */
+  transform: translateX(-50%);
+  width: 60px;           /* длина линии */
+  height: 1px;           /* толщина линии */
+  background-color: gray; /* цвет линии */
+}
+
+input:focus {
+  border-bottom-color: #666; /* чуть темнее при фокусе */
+}
