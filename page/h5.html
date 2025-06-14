@@ -13,41 +13,16 @@
 
   <!-- Подключаем SDK Telegram -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="https://api-maps.yandex.ru/2.1/?apikey=0e6db154-78d4-444d-a6c1-0dadca220acd&lang=ru_RU"></script>
 </head>
 
 <body>
-    <div class="header">
-        <div class="header-content">
-            <h3>Доставка</h3>
-            <h3>Магазин</h3>
-        </div>
-    </div>
-
-
-    <div id="map">
-      <div class="marker-center"></div>
-    </div>
-    
-    <div class="lower">
-        <div id="address">Адрес доставки</div>
-        <input id="address-input" type="text" placeholder="Введите адрес" style="width: 100%; padding: 8px; margin: 10px 0;">
-        <button onclick="searchAddress()">Найти</button>
-        <div style="display: flex; justify-content: center; margin: 30px;">
-            <a href="h5.html" class="case-card" style="text-decoration: none;">
-                <button class="promo-button">Доставить сюда</button>
-            </a>
-        </div>
-    </div>
-
-    
-
+    <h2>Каталог</h2>
     <div class="bottom-nav">
       <a href="../index.html" class="nav-item">
         <img src="../assets/nav-icon/Component1.png" alt="Главная">
         <span>Главная</span>
       </a>
-      <a href="h2.html" class="nav-item active">
+      <a href="h5.html" class="nav-item active">
         <img src="../assets/nav-icon/Component2.png" alt="Каталог">
         <span>Каталог</span>
       </a>
@@ -61,6 +36,5 @@
       </a>
     </div>
 
-    <script src="../scripts/map.js"></script>
 </body>
 </html>
