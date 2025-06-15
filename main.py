@@ -66,7 +66,7 @@ app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # https://inflyser.github.io
+    allow_origins=["https://5ka-front.netlify.app"],  # https://inflyser.github.io
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
