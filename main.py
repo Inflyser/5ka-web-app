@@ -78,16 +78,6 @@ async def ping():
     return JSONResponse(content={"status": "ok", "message": "Backend is alive!"})
 
 
-app = FastAPI()
-
-# Разрешить CORS (чтобы фронт с веб-приложения мог обращаться)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # в проде лучше указать конкретный домен
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
 # Получение ближайшего магазина
 @app.get("/nearest-store")
 async def nearest_store(lat: float = Query(...), lon: float = Query(...)):
