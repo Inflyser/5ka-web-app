@@ -67,7 +67,7 @@ app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://5ka-front.netlify.app"],  # https://inflyser.github.io
+    allow_origins=["*"],  # https://5ka-front.netlify.app
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -79,21 +79,55 @@ async def ping():
     return JSONResponse(content={"status": "ok", "message": "Backend is alive!"})
 
 
-# Получение ближайшего магазина
-@app.get("/nearest-store")
-async def nearest_store(lat: float = Query(...), lon: float = Query(...)):
-    url = f"https://5ka.ru/api/v2/stores/?latitude={lat}&longitude={lon}"
+import httpx
+from fastapi import HTTPException
+
+# async def get_delivery_store(lat: float, lon: float):
+#     async with httpx.AsyncClient() as client:
+#         response = await client.get(
+#             f"https://some-api.com/check-delivery?lat={lat}&lon={lon}"
+#         )
+    
+#     if response.status_code != 200:
+#         raise HTTPException(status_code=500, detail="Ошибка при запросе зоны доставки")
+
+#     try:
+#         data = response.json()
+#     except ValueError:
+#         raise HTTPException(status_code=500, detail="Невалидный JSON от API")
+
+#     if not data.get("delivery_available"):
+#         raise HTTPException(status_code=404, detail="Доставка в эту зону недоступна")
+
+#     return {
+#         "delivery_point": data.get("address"),
+#         "store_id": data.get("store_id"),
+#         "store_name": data.get("store_name"),
+#     }
+    
+@app.get("/check-delivery")
+async def check_delivery(lat: float, lon: float):
+    url = "https://api.5ka.ru/api/v2/delivery_zone/check"
+    payload = {"lat": lat, "lon": lon}
+
     async with httpx.AsyncClient() as client:
-        r = await client.get(url)
-        data = r.json()
-    if data.get("results"):
-        store = data["results"][0]
-        return {
-            "id": store.get("id"),
-            "address": store.get("address"),
-            "store": store
-        }
-    return {"error": "Store not found"}
+        response = await client.post(url, json=payload)
+
+    if response.status_code != 200:
+        raise HTTPException(status_code=500, detail="Ошибка API Пятерочки")
+
+    data = response.json()
+    
+    if not data.get("available"):
+        raise HTTPException(status_code=404, detail="Доставка в эту зону недоступна")
+
+    return {
+        "store_id": data.get("store_id"),
+        "region_id": data.get("region_id"),
+        "delivery_type": data.get("delivery_type"),
+        "address": data.get("address"),  # если есть
+    }
+
 
 # Получение товаров из магазина
 @app.get("/store-items")
@@ -111,3 +145,20 @@ async def telegram_webhook(update: dict):
     telegram_update = Update.model_validate(update)
     await dp.feed_update(bot, telegram_update)
     return {"ok": True}
+
+
+# # Получение ближайшего магазина
+# @app.get("/nearest-store")
+# async def nearest_store(lat: float = Query(...), lon: float = Query(...)):
+#     url = f"https://5ka.ru/api/v2/stores/?latitude={lat}&longitude={lon}"
+#     async with httpx.AsyncClient() as client:
+#         r = await client.get(url)
+#         data = r.json()
+#     if data.get("results"):
+#         store = data["results"][0]
+#         return {
+#             "id": store.get("id"),
+#             "address": store.get("address"),
+#             "store": store
+#         }
+#     return {"error": "Store not found"}
