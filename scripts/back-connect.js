@@ -1,3 +1,4 @@
+// Получить координаты пользователя
 async function getUserLocation() {
     return new Promise((resolve, reject) => {
         navigator.geolocation.getCurrentPosition(
@@ -16,6 +17,32 @@ async function getUserLocation() {
     });
 }
 
+// Проверка доставки
+async function checkDelivery(lat, lon) {
+    const response = await fetch("https://fiveka-web-app.onrender.com/check-delivery", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ lat, lon }),
+    });
+
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || "Ошибка при проверке доставки");
+    }
+
+    return await response.json(); // { store_id: ... }
+}
+
+// Получить адрес по координатам
+async function getAddressByCoords(lat, lon) {
+    const res = await fetch(`https://api.5ka.ru/api/v2/geo/address?lat=${lat}&lon=${lon}`);
+    const data = await res.json();
+    return data.address || "Адрес не найден";
+}
+
+// Получить ближайший магазин (необязательно, если используешь checkDelivery)
 async function getNearestStore(lat, lon) {
     try {
         const res = await fetch(`https://fiveka-web-app.onrender.com/nearest-store?lat=${lat}&lon=${lon}`);
@@ -23,35 +50,39 @@ async function getNearestStore(lat, lon) {
         return data;
     } catch (err) {
         console.error("Ошибка при получении магазина:", err);
-        return {};
+        return null;
     }
 }
 
-async function getStoreItems(storeId) {
-    const res = await fetch(`https://fiveka-web-app.onrender.com/store-items?store_id=${storeId}`);
-    const data = await res.json();
-    return data;
-}
+// Загрузка данных при клике
+async function handleDeliveryCheck() {
+    try {
+        const coords = await getUserLocation();
+        const address = await getAddressByCoords(coords.lat, coords.lon);
 
-async function loadData() {
-    const coords = await getUserLocation();
-    console.log("Координаты пользователя:", coords);
+        // Отображаем адрес
+        document.getElementById("address").textContent = "Ваш адрес: " + address;
 
-    const store = await getNearestStore(coords.lat, coords.lon);
-    console.log("Ближайший магазин:", store);
+        const deliveryResult = await checkDelivery(coords.lat, coords.lon);
+        const storeId = deliveryResult.store_id;
 
-    if (store.id) {
-        const items = await getStoreItems(store.id);
+        document.getElementById("status").textContent = `Доставка доступна. Магазин ID: ${storeId}`;
+
+        // (Опционально) получить товары:
+        const itemsRes = await fetch(`https://fiveka-web-app.onrender.com/store-items?store_id=${storeId}`);
+        const items = await itemsRes.json();
         console.log("Товары магазина:", items);
-        renderItems(items);
-    } else {
-        alert("Магазин не найден");
+
+    } catch (error) {
+        console.error("Ошибка:", error.message);
+        document.getElementById("status").textContent = "Доставка недоступна по вашему адресу.";
     }
 }
 
-async function handleDelivery() {
-    await loadData(); // Получим магазин и товары
-
-    // Например, после этого перейти на другую страницу:
-    window.location.href = "h5.html";
-}
+// Привязка к кнопке
+document.addEventListener("DOMContentLoaded", () => {
+    const button = document.getElementById("checkDeliveryBtn");
+    if (button) {
+        button.addEventListener("click", handleDeliveryCheck);
+    }
+});
