@@ -48,3 +48,10 @@ async function loadData() {
         alert("Магазин не найден");
     }
 }
+
+async function handleDelivery() {
+    await loadData(); // Получим магазин и товары
+
+    // Например, после этого перейти на другую страницу:
+    window.location.href = "h5.html";
+}
