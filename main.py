@@ -11,6 +11,7 @@ from aiogram.enums import ParseMode
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.client.default import DefaultBotProperties
 from aiogram.exceptions import TelegramForbiddenError
+from aiogram.types import Update
 
 import os
 import httpx
@@ -102,3 +103,11 @@ async def store_items(store_id: int = Query(...)):
         r = await client.get(url)
         data = r.json()
     return data.get("results", [])
+
+
+
+@app.post("/telegram")
+async def telegram_webhook(update: dict):
+    telegram_update = Update.model_validate(update)
+    await dp.feed_update(bot, telegram_update)
+    return {"ok": True}
