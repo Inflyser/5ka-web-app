@@ -19,7 +19,7 @@ import httpx
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 
-
+from pydantic import BaseModel
 
 load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
@@ -105,10 +105,14 @@ from fastapi import HTTPException
 #         "store_name": data.get("store_name"),
 #     }
     
-@app.get("/check-delivery")
-async def check_delivery(lat: float, lon: float):
+class Location(BaseModel):
+    lat: float
+    lon: float
+
+@app.post("/check-delivery")
+async def check_delivery(loc: Location):
     url = "https://api.5ka.ru/api/v2/delivery_zone/check"
-    payload = {"lat": lat, "lon": lon}
+    payload = {"lat": loc.lat, "lon": loc.lon}
 
     async with httpx.AsyncClient() as client:
         response = await client.post(url, json=payload)
@@ -125,9 +129,8 @@ async def check_delivery(lat: float, lon: float):
         "store_id": data.get("store_id"),
         "region_id": data.get("region_id"),
         "delivery_type": data.get("delivery_type"),
-        "address": data.get("address"),  # если есть
+        "address": data.get("address"),
     }
-
 
 # Получение товаров из магазина
 @app.get("/store-items")
