@@ -1,3 +1,5 @@
+let map, centerMarker;
+
 // Получить координаты пользователя
 async function getUserLocation() {
     return new Promise((resolve, reject) => {
@@ -16,6 +18,8 @@ async function getUserLocation() {
         );
     });
 }
+
+console.log("lat:", lat, "lon:", lon);
 
 // Проверка доставки
 async function checkDelivery(lat, lon) {
@@ -47,8 +51,11 @@ async function getAddressByCoords(lat, lon) {
 // Загрузка данных при клике
 async function handleDeliveryCheck() {
     try {
-        const { lat, lng } = map.getCenter();
-        const lon = lng;
+        const coords = map.getCenter(); // [lat, lon]
+        const lat = coords[0];
+        const lon = coords[1];
+
+        console.log("📍 Проверка координат:", lat, lon);
 
         const address = await getAddressByCoords(lat, lon);
         document.getElementById("address").textContent = "Ваш адрес: " + address;
@@ -67,6 +74,8 @@ async function handleDeliveryCheck() {
             `✅ Доставка доступна!\n🏪 Магазин ID: ${storeId}\n📍 Адрес доставки: ${deliveryAddress}`;
 
         const itemsRes = await fetch(`https://fiveka-web-app.onrender.com/store-items?store_id=${storeId}`);
+        if (!itemsRes.ok) throw new Error("Не удалось загрузить товары");
+
         const items = await itemsRes.json();
         console.log("🛒 Товары магазина:", items);
 

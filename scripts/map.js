@@ -1,3 +1,5 @@
+let map, centerMarker;
+
 function searchAddress() {
     const query = document.getElementById('address-input').value;
     ymaps.geocode(query).then(function (res) {
@@ -13,7 +15,6 @@ function searchAddress() {
     });
 }
 
-let map, centerMarker;
 
 ymaps.ready(function () {
     map = new ymaps.Map("map", {
