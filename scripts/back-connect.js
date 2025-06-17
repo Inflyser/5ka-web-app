@@ -53,16 +53,19 @@ async function handleDeliveryCheck() {
         // Отображаем адрес
         document.getElementById("address").textContent = "Ваш адрес: " + address;
 
-        const deliveryResult = await checkDelivery(lat, lon);
-        const { delivery, store_id, address: deliveryAddress } = deliveryResult;
+        const deliveryResult = await checkDelivery(coords.lat, coords.lon);
+        const deliveryAvailable = deliveryResult.store_id !== undefined; // или другой признак
 
-        if (!delivery) {
+        if (!deliveryAvailable) {
             document.getElementById("status").textContent = "Доставка недоступна по вашему адресу.";
             return;
         }
 
-        document.getElementById("status").textContent = `✅ Доставка доступна!\n🏪 Магазин ID: ${store_id}\n📍 Адрес доставки: ${deliveryAddress}`;
+        const storeId = deliveryResult.store_id;
+        const deliveryAddress = deliveryResult.address || "Адрес не указан";
 
+        document.getElementById("status").textContent = `✅ Доставка доступна!\n🏪 Магазин ID: ${storeId}\n📍 Адрес доставки: ${deliveryAddress}`;
+        
         // (Опционально) получить товары:
         const itemsRes = await fetch(`https://fiveka-web-app.onrender.com/store-items?store_id=${storeId}`);
         const items = await itemsRes.json();
