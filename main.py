@@ -67,7 +67,7 @@ app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # https://5ka-front.netlify.app
+    allow_origins=["https://5ka-front.netlify.app"],  # https://5ka-front.netlify.app
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
