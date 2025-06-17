@@ -47,34 +47,34 @@ async function getAddressByCoords(lat, lon) {
 // Загрузка данных при клике
 async function handleDeliveryCheck() {
     try {
-        const coords = map.getCenter();
-        const lat = coords.lat;
-        const lon = coords.lng; // <--- ВАЖНО
+        const { lat, lng } = map.getCenter();
+        const lon = lng;
 
         const address = await getAddressByCoords(lat, lon);
         document.getElementById("address").textContent = "Ваш адрес: " + address;
 
         const deliveryResult = await checkDelivery(lat, lon);
 
-        if (!deliveryResult.store_id) {
-            document.getElementById("status").textContent = "Доставка недоступна по вашему адресу.";
+        if (!deliveryResult?.store_id) {
+            document.getElementById("status").textContent = "❌ Доставка недоступна по вашему адресу.";
             return;
         }
 
         const storeId = deliveryResult.store_id;
         const deliveryAddress = deliveryResult.address || "Адрес не указан";
 
-        document.getElementById("status").textContent = `✅ Доставка доступна!\n🏪 Магазин ID: ${storeId}\n📍 Адрес доставки: ${deliveryAddress}`;
+        document.getElementById("status").textContent =
+            `✅ Доставка доступна!\n🏪 Магазин ID: ${storeId}\n📍 Адрес доставки: ${deliveryAddress}`;
 
         const itemsRes = await fetch(`https://fiveka-web-app.onrender.com/store-items?store_id=${storeId}`);
         const items = await itemsRes.json();
-        console.log("Товары магазина:", items);
+        console.log("🛒 Товары магазина:", items);
 
     } catch (error) {
-        console.error("Ошибка:", error.message);
+        console.error("Ошибка:", error);
         const statusElem = document.getElementById("status");
         if (statusElem) {
-            statusElem.textContent = "Ошибка при проверке доставки.";
+            statusElem.textContent = "⚠️ Ошибка при проверке доставки: " + error.message;
         }
     }
 }
