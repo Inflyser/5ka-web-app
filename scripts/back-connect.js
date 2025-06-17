@@ -57,22 +57,21 @@ async function getNearestStore(lat, lon) {
 // Загрузка данных при клике
 async function handleDeliveryCheck() {
     try {
-        const coords = await getUserLocation();
-        const address = await getAddressByCoords(coords.lat, coords.lon);
+        const coords = map.getCenter(); // координаты центра карты
+        const lat = coords[0];
+        const lon = coords[1];
 
-        // Отображаем адрес
+        const address = await getAddressByCoords(lat, lon);
         document.getElementById("address").textContent = "Ваш адрес: " + address;
 
-        const deliveryResult = await checkDelivery(coords.lat, coords.lon);
+        const deliveryResult = await checkDelivery(lat, lon);
         const storeId = deliveryResult.store_id;
 
         document.getElementById("status").textContent = `Доставка доступна. Магазин ID: ${storeId}`;
 
-        // (Опционально) получить товары:
         const itemsRes = await fetch(`https://fiveka-web-app.onrender.com/store-items?store_id=${storeId}`);
         const items = await itemsRes.json();
         console.log("Товары магазина:", items);
-
     } catch (error) {
         console.error("Ошибка:", error.message);
         document.getElementById("status").textContent = "Доставка недоступна по вашему адресу.";
