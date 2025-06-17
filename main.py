@@ -86,44 +86,49 @@ class Location(BaseModel):
     lat: float
     lon: float
 
-@app.post("/check-delivery")
+@router.post("/check-delivery")
 async def check_delivery(loc: Location):
-    url = "https://5ka.ru/graphql"
-
-    payload = {
-        "operationName": "deliveryZones",
-        "variables": {"lat": loc.lat, "lon": loc.lon},
-        "query": """
-            query deliveryZones($lat: Float!, $lon: Float!) {
-              deliveryZones(lat: $lat, lon: $lon) {
-                storeId
-                available
-                deliveryType
-                address
-              }
-            }
-        """
-    }
+    # 1. Получаем адрес из координат через Nominatim
+    geocode_url = f"https://nominatim.openstreetmap.org/reverse?format=json&lat={loc.lat}&lon={loc.lon}&zoom=18&addressdetails=1"
 
     async with httpx.AsyncClient() as client:
-        response = await client.post(url, json=payload)
+        geocode_response = await client.get(geocode_url, headers={"User-Agent": "FastAPI-App"})
+        if geocode_response.status_code != 200:
+            raise HTTPException(status_code=500, detail="Не удалось получить адрес по координатам")
+        address_data = geocode_response.json()
+        full_address = address_data.get("display_name")
+        if not full_address:
+            raise HTTPException(status_code=400, detail="Адрес не найден")
 
-    if response.status_code != 200:
-        raise HTTPException(status_code=500, detail="Ошибка GraphQL запроса")
-
-    data = response.json()
-    zones = data.get("data", {}).get("deliveryZones", [])
-
-    for zone in zones:
-        if zone.get("available"):
-            return {
-                "delivery": True,
-                "store_id": zone.get("storeId"),
-                "delivery_type": zone.get("deliveryType"),
-                "address": zone.get("address")
+        # 2. Делаем GraphQL-запрос с адресом
+        graphql_url = "https://5ka.ru/graphql"
+        graphql_payload = {
+            "operationName": "availableDeliveryTypes",
+            "variables": {
+                "address": full_address
+            },
+            "query": """
+            query availableDeliveryTypes($address: String!) {
+                availableDeliveryTypes(address: $address)
             }
+            """
+        }
 
-    raise HTTPException(status_code=404, detail="Доставка в эту зону недоступна")
+        headers = {
+            "User-Agent": "Mozilla/5.0",
+            "Accept": "*/*",
+            "Content-Type": "application/json"
+        }
+
+        graphql_response = await client.post(graphql_url, json=graphql_payload, headers=headers)
+        print("GRAPHQL STATUS:", graphql_response.status_code)
+        print("GRAPHQL RESPONSE:", graphql_response.text)
+
+        if graphql_response.status_code != 200:
+            raise HTTPException(status_code=500, detail="Ошибка запроса к GraphQL API")
+
+        return graphql_response.json()
+
 
 # Получение товаров из магазина
 @app.get("/store-items")
