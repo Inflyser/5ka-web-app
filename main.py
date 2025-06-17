@@ -88,25 +88,28 @@ class Location(BaseModel):
 
 @router.post("/check-delivery")
 async def check_delivery(loc: Location):
-    # 1. Получаем адрес из координат через Nominatim
-    geocode_url = f"https://nominatim.openstreetmap.org/reverse?format=json&lat={loc.lat}&lon={loc.lon}&zoom=18&addressdetails=1"
+    # 1. Геокодинг с API 5ka
+    geocode_url = f"https://5ka.ru/api/maps/geocode/?geocode={loc.lon},{loc.lat}"
 
     async with httpx.AsyncClient() as client:
-        geocode_response = await client.get(geocode_url, headers={"User-Agent": "FastAPI-App"})
+        geocode_response = await client.get(geocode_url, headers={"User-Agent": "Mozilla/5.0"})
         if geocode_response.status_code != 200:
-            raise HTTPException(status_code=500, detail="Не удалось получить адрес по координатам")
-        address_data = geocode_response.json()
-        full_address = address_data.get("display_name")
-        if not full_address:
-            raise HTTPException(status_code=400, detail="Адрес не найден")
+            raise HTTPException(status_code=500, detail="Ошибка получения адреса от 5ka")
 
-        # 2. Делаем GraphQL-запрос с адресом
+        geocode_data = geocode_response.json()
+        print("5ka Geocode Response:", geocode_data)
+
+        # Попробуем достать адрес из ответа
+        try:
+            address = geocode_data["results"][0]["geo_object"]["address"]
+        except (KeyError, IndexError):
+            raise HTTPException(status_code=400, detail="Не удалось извлечь адрес")
+
+        # 2. Запрос в GraphQL 5ka с найденным адресом
         graphql_url = "https://5ka.ru/graphql"
         graphql_payload = {
             "operationName": "availableDeliveryTypes",
-            "variables": {
-                "address": full_address
-            },
+            "variables": {"address": address},
             "query": """
             query availableDeliveryTypes($address: String!) {
                 availableDeliveryTypes(address: $address)
@@ -114,21 +117,23 @@ async def check_delivery(loc: Location):
             """
         }
 
-        headers = {
-            "User-Agent": "Mozilla/5.0",
-            "Accept": "*/*",
-            "Content-Type": "application/json"
-        }
+        graphql_response = await client.post(
+            graphql_url,
+            json=graphql_payload,
+            headers={
+                "User-Agent": "Mozilla/5.0",
+                "Accept": "*/*",
+                "Content-Type": "application/json"
+            }
+        )
 
-        graphql_response = await client.post(graphql_url, json=graphql_payload, headers=headers)
-        print("GRAPHQL STATUS:", graphql_response.status_code)
-        print("GRAPHQL RESPONSE:", graphql_response.text)
+        print("GraphQL Status:", graphql_response.status_code)
+        print("GraphQL Response:", graphql_response.text)
 
         if graphql_response.status_code != 200:
             raise HTTPException(status_code=500, detail="Ошибка запроса к GraphQL API")
 
         return graphql_response.json()
-
 
 # Получение товаров из магазина
 @app.get("/store-items")
