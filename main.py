@@ -81,13 +81,14 @@ async def ping():
 
 import httpx
 from fastapi import HTTPException
+from fastapi import APIRouter
 
 class Location(BaseModel):
     lat: float
     lon: float
-    
-    
-app.include_router(router)
+
+router = APIRouter()
+
 
 @router.post("/check-delivery")
 async def check_delivery(loc: Location):
@@ -184,6 +185,7 @@ async def telegram_webhook(update: dict):
     await dp.feed_update(bot, telegram_update)
     return {"ok": True}
 
+app.include_router(router)
 
 # # Получение ближайшего магазина
 # @app.get("/nearest-store")
