@@ -85,6 +85,9 @@ from fastapi import HTTPException
 class Location(BaseModel):
     lat: float
     lon: float
+    
+    
+app.include_router(router)
 
 @router.post("/check-delivery")
 async def check_delivery(loc: Location):
