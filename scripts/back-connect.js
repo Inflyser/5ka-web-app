@@ -1,4 +1,3 @@
-let map, centerMarker;
 
 // Получить координаты пользователя
 async function getUserLocation() {
