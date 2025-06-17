@@ -82,64 +82,86 @@ async def ping():
 import httpx
 from fastapi import HTTPException
 
-# async def get_delivery_store(lat: float, lon: float):
-#     async with httpx.AsyncClient() as client:
-#         response = await client.get(
-#             f"https://some-api.com/check-delivery?lat={lat}&lon={lon}"
-#         )
-    
-#     if response.status_code != 200:
-#         raise HTTPException(status_code=500, detail="Ошибка при запросе зоны доставки")
-
-#     try:
-#         data = response.json()
-#     except ValueError:
-#         raise HTTPException(status_code=500, detail="Невалидный JSON от API")
-
-#     if not data.get("delivery_available"):
-#         raise HTTPException(status_code=404, detail="Доставка в эту зону недоступна")
-
-#     return {
-#         "delivery_point": data.get("address"),
-#         "store_id": data.get("store_id"),
-#         "store_name": data.get("store_name"),
-#     }
-    
 class Location(BaseModel):
     lat: float
     lon: float
 
 @app.post("/check-delivery")
 async def check_delivery(loc: Location):
-    url = "https://api.5ka.ru/api/v2/delivery_zone/check"
-    payload = {"lat": loc.lat, "lon": loc.lon}
+    url = "https://5ka.ru/graphql"
+
+    payload = {
+        "operationName": "deliveryZones",
+        "variables": {"lat": loc.lat, "lon": loc.lon},
+        "query": """
+            query deliveryZones($lat: Float!, $lon: Float!) {
+              deliveryZones(lat: $lat, lon: $lon) {
+                storeId
+                available
+                deliveryType
+                address
+              }
+            }
+        """
+    }
 
     async with httpx.AsyncClient() as client:
         response = await client.post(url, json=payload)
 
     if response.status_code != 200:
-        raise HTTPException(status_code=500, detail="Ошибка API Пятерочки")
+        raise HTTPException(status_code=500, detail="Ошибка GraphQL запроса")
 
     data = response.json()
-    
-    if not data.get("available"):
-        raise HTTPException(status_code=404, detail="Доставка в эту зону недоступна")
+    zones = data.get("data", {}).get("deliveryZones", [])
 
-    return {
-        "store_id": data.get("store_id"),
-        "region_id": data.get("region_id"),
-        "delivery_type": data.get("delivery_type"),
-        "address": data.get("address"),
-    }
+    for zone in zones:
+        if zone.get("available"):
+            return {
+                "delivery": True,
+                "store_id": zone.get("storeId"),
+                "delivery_type": zone.get("deliveryType"),
+                "address": zone.get("address")
+            }
+
+    raise HTTPException(status_code=404, detail="Доставка в эту зону недоступна")
 
 # Получение товаров из магазина
 @app.get("/store-items")
-async def store_items(store_id: int = Query(...)):
-    url = f"https://5ka.ru/api/v2/special_offers/?store={store_id}"
+async def store_items(store_id: str = Query(...), page: int = 1):
+    url = "https://5ka.ru/graphql"
+    payload = {
+        "operationName": "products",
+        "variables": {"storeId": store_id, "page": page, "perPage": 20},
+        "query": """
+            query products($storeId: ID!, $page: Int!, $perPage: Int!) {
+              store(id: $storeId) {
+                products(page: $page, perPage: $perPage) {
+                  items {
+                    id
+                    title
+                    price
+                    unit
+                    imageUrl
+                    available
+                  }
+                  pageInfo {
+                    totalPages
+                  }
+                }
+              }
+            }
+        """
+    }
+
     async with httpx.AsyncClient() as client:
-        r = await client.get(url)
-        data = r.json()
-    return data.get("results", [])
+        response = await client.post(url, json=payload)
+
+    if response.status_code != 200:
+        raise HTTPException(status_code=500, detail="Ошибка получения товаров")
+
+    data = response.json()
+    items = data.get("data", {}).get("store", {}).get("products", {}).get("items", [])
+    return items
 
 
 
