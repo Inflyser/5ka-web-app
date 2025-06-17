@@ -18,7 +18,7 @@ async function getUserLocation() {
     });
 }
 
-console.log("lat:", lat, "lon:", lon);
+
 
 // Проверка доставки
 async function checkDelivery(lat, lon) {
