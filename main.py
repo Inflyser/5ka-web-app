@@ -98,7 +98,7 @@ router = APIRouter()
 @router.post("/check-delivery")
 async def check_delivery(loc: Location):
     geocode_url = f"https://5ka.ru/api/maps/geocode/?geocode={loc.lon},{loc.lat}"
-
+    logger.info(f"{loc.lon},{loc.lat}")
     async with httpx.AsyncClient() as client:
         try:
             geocode_response = await client.get(geocode_url, headers={"User-Agent": "Mozilla/5.0"})
