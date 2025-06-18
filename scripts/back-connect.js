@@ -39,15 +39,6 @@ async function checkDelivery(lat, lon) {
 }
 
 
-// Получить адрес по координатам
-async function getAddressByCoords(lat, lon) {
-    const res = await fetch(`https://api.5ka.ru/api/v2/geo/address?lat=${lat}&lon=${lon}`);
-    const data = await res.json();
-    return data.address || "Адрес не найден";
-}
-
-
-// Загрузка данных при клике
 async function handleDeliveryCheck() {
     try {
         const coords = map.getCenter(); // [lat, lon]
@@ -56,10 +47,11 @@ async function handleDeliveryCheck() {
 
         console.log("📍 Проверка координат:", lat, lon);
 
-        const address = await getAddressByCoords(lat, lon);
-        document.getElementById("address").textContent = "Ваш адрес: " + address;
-
         const deliveryResult = await checkDelivery(lat, lon);
+
+        // ✅ Показываем адрес, полученный с бэкенда:
+        const deliveryAddress = deliveryResult.address || "Адрес не определён";
+        document.getElementById("address").textContent = "📍 Ваш адрес: " + deliveryAddress;
 
         if (!deliveryResult?.store_id) {
             document.getElementById("status").textContent = "❌ Доставка недоступна по вашему адресу.";
@@ -67,7 +59,6 @@ async function handleDeliveryCheck() {
         }
 
         const storeId = deliveryResult.store_id;
-        const deliveryAddress = deliveryResult.address || "Адрес не указан";
 
         document.getElementById("status").textContent =
             `✅ Доставка доступна!\n🏪 Магазин ID: ${storeId}\n📍 Адрес доставки: ${deliveryAddress}`;
