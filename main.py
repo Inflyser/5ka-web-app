@@ -133,10 +133,11 @@ async def check_delivery(loc: Location):
             graphql_response = await client.post(
                 graphql_url,
                 json=graphql_payload,
-                headers={
-                    "User-Agent": "Mozilla/5.0",
-                    "Accept": "*/*",
-                    "Content-Type": "application/json"
+                headers = {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+                    "Accept": "application/json, text/plain, */*",
+                    "Referer": "https://5ka.ru/",
+                    "Origin": "https://5ka.ru"
                 }
             )
             logger.info(f"GraphQL Status: {graphql_response.status_code}")
