@@ -97,65 +97,35 @@ router = APIRouter()
 
 @router.post("/check-delivery")
 async def check_delivery(loc: Location):
-    geocode_url = f"https://5ka.ru/api/maps/geocode/?geocode={loc.lon},{loc.lat}"
-    logger.info(f"{loc.lon},{loc.lat}")
+    logger.info(f"Координаты: lat={loc.lat}, lon={loc.lon}")
+    store_url = f"https://5d.5ka.ru/api/orders/v1/orders/stores/?lon={loc.lon}&lat={loc.lat}"
+
     async with httpx.AsyncClient() as client:
         try:
-            geocode_response = await client.get(geocode_url, headers={"User-Agent": "Mozilla/5.0"})
-            logger.info(f"Geo response status: {geocode_response.status_code}")
+            store_response = await client.get(store_url, headers={"User-Agent": "Mozilla/5.0"})
+            logger.info(f"Store API status: {store_response.status_code}")
         except Exception as e:
-            logger.error(f"Ошибка запроса к геокодингу: {e}")
-            return {"success": False, "message": "Ошибка запроса к геокодингу"}
+            logger.error(f"Ошибка запроса к Store API: {e}")
+            return {"success": False, "message": "Ошибка запроса к магазину"}
 
-        if geocode_response.status_code != 200:
-            return {"success": False, "message": "Ошибка получения адреса от 5ka"}
+        if store_response.status_code != 200:
+            return {"success": False, "message": "Магазины не найдены"}
 
         try:
-            geocode_data = geocode_response.json()
-            logger.debug(f"5ka Geocode Response: {geocode_data}")
-            address = geocode_data["results"][0]["geo_object"]["address"]
-        except (KeyError, IndexError, ValueError) as e:
-            logger.warning(f"Ошибка извлечения адреса: {e}")
-            return {"success": False, "message": "Не удалось извлечь адрес по координатам"}
+            stores = store_response.json()
+            if not stores:
+                return {"success": False, "message": "Нет магазинов рядом"}
 
-        graphql_url = "https://5ka.ru/graphql"
-        graphql_payload = {
-            "operationName": "availableDeliveryTypes",
-            "variables": {"address": address},
-            "query": """
-            query availableDeliveryTypes($address: String!) {
-                availableDeliveryTypes(address: $address)
-            }
-            """
-        }
+            store = stores[0]  # ближайший
+            store_id = store["store_id"]
+            address = store["address"]
 
-        try:
-            graphql_response = await client.post(
-                graphql_url,
-                json=graphql_payload,
-                headers = {
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-                    "Accept": "application/json, text/plain, */*",
-                    "Referer": "https://5ka.ru/",
-                    "Origin": "https://5ka.ru"
-                }
-            )
-            logger.info(f"GraphQL Status: {graphql_response.status_code}")
-            logger.debug(f"GraphQL Response: {graphql_response.text}")
+            logger.info(f"Ближайший магазин: {store_id} - {address}")
+
+            return {"success": True, "store_id": store_id, "address": address}
         except Exception as e:
-            logger.error(f"Ошибка запроса к GraphQL API: {e}")
-            return {"success": False, "message": "Ошибка соединения с GraphQL API"}
-
-        if graphql_response.status_code != 200:
-            return {"success": False, "message": "Ошибка запроса к GraphQL API"}
-
-        data = graphql_response.json()
-        delivery_types = data.get("data", {}).get("availableDeliveryTypes")
-
-        if not delivery_types:
-            return {"success": False, "message": "Доставка не доступна по данному адресу"}
-
-        return {"success": True, "delivery_types": delivery_types}
+            logger.error(f"Ошибка обработки данных магазинов: {e}")
+            return {"success": False, "message": "Ошибка обработки ответа"}
 
 
 @app.get("/store-items")
