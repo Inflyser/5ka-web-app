@@ -15,6 +15,7 @@ from aiogram.types import Update
 
 import os
 import httpx
+import logging
 
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
@@ -23,6 +24,10 @@ from pydantic import BaseModel
 
 load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 
 
 def webapp_builder() -> InlineKeyboardBuilder:
@@ -92,24 +97,27 @@ router = APIRouter()
 
 @router.post("/check-delivery")
 async def check_delivery(loc: Location):
-    # 1. Геокодинг с API 5ka
     geocode_url = f"https://5ka.ru/api/maps/geocode/?geocode={loc.lon},{loc.lat}"
 
     async with httpx.AsyncClient() as client:
-        geocode_response = await client.get(geocode_url, headers={"User-Agent": "Mozilla/5.0"})
-        if geocode_response.status_code != 200:
-            raise HTTPException(status_code=500, detail="Ошибка получения адреса от 5ka")
-
-        geocode_data = geocode_response.json()
-        print("5ka Geocode Response:", geocode_data)
-
-        # Попробуем достать адрес из ответа
         try:
-            address = geocode_data["results"][0]["geo_object"]["address"]
-        except (KeyError, IndexError):
-            raise HTTPException(status_code=400, detail="Не удалось извлечь адрес")
+            geocode_response = await client.get(geocode_url, headers={"User-Agent": "Mozilla/5.0"})
+            logger.info(f"Geo response status: {geocode_response.status_code}")
+        except Exception as e:
+            logger.error(f"Ошибка запроса к геокодингу: {e}")
+            return {"success": False, "message": "Ошибка запроса к геокодингу"}
 
-        # 2. Запрос в GraphQL 5ka с найденным адресом
+        if geocode_response.status_code != 200:
+            return {"success": False, "message": "Ошибка получения адреса от 5ka"}
+
+        try:
+            geocode_data = geocode_response.json()
+            logger.debug(f"5ka Geocode Response: {geocode_data}")
+            address = geocode_data["results"][0]["geo_object"]["address"]
+        except (KeyError, IndexError, ValueError) as e:
+            logger.warning(f"Ошибка извлечения адреса: {e}")
+            return {"success": False, "message": "Не удалось извлечь адрес по координатам"}
+
         graphql_url = "https://5ka.ru/graphql"
         graphql_payload = {
             "operationName": "availableDeliveryTypes",
@@ -121,25 +129,34 @@ async def check_delivery(loc: Location):
             """
         }
 
-        graphql_response = await client.post(
-            graphql_url,
-            json=graphql_payload,
-            headers={
-                "User-Agent": "Mozilla/5.0",
-                "Accept": "*/*",
-                "Content-Type": "application/json"
-            }
-        )
-
-        print("GraphQL Status:", graphql_response.status_code)
-        print("GraphQL Response:", graphql_response.text)
+        try:
+            graphql_response = await client.post(
+                graphql_url,
+                json=graphql_payload,
+                headers={
+                    "User-Agent": "Mozilla/5.0",
+                    "Accept": "*/*",
+                    "Content-Type": "application/json"
+                }
+            )
+            logger.info(f"GraphQL Status: {graphql_response.status_code}")
+            logger.debug(f"GraphQL Response: {graphql_response.text}")
+        except Exception as e:
+            logger.error(f"Ошибка запроса к GraphQL API: {e}")
+            return {"success": False, "message": "Ошибка соединения с GraphQL API"}
 
         if graphql_response.status_code != 200:
-            raise HTTPException(status_code=500, detail="Ошибка запроса к GraphQL API")
+            return {"success": False, "message": "Ошибка запроса к GraphQL API"}
 
-        return graphql_response.json()
+        data = graphql_response.json()
+        delivery_types = data.get("data", {}).get("availableDeliveryTypes")
 
-# Получение товаров из магазина
+        if not delivery_types:
+            return {"success": False, "message": "Доставка не доступна по данному адресу"}
+
+        return {"success": True, "delivery_types": delivery_types}
+
+
 @app.get("/store-items")
 async def store_items(store_id: str = Query(...), page: int = 1):
     url = "https://5ka.ru/graphql"
@@ -168,15 +185,24 @@ async def store_items(store_id: str = Query(...), page: int = 1):
     }
 
     async with httpx.AsyncClient() as client:
-        response = await client.post(url, json=payload)
+        try:
+            response = await client.post(url, json=payload)
+        except Exception as e:
+            logger.error(f"Ошибка запроса к каталогу: {e}")
+            raise HTTPException(status_code=500, detail="Ошибка соединения с 5ka GraphQL")
 
     if response.status_code != 200:
+        logger.warning(f"Неверный статус каталога: {response.status_code}")
         raise HTTPException(status_code=500, detail="Ошибка получения товаров")
 
-    data = response.json()
-    items = data.get("data", {}).get("store", {}).get("products", {}).get("items", [])
-    return items
+    try:
+        data = response.json()
+        items = data.get("data", {}).get("store", {}).get("products", {}).get("items", [])
+    except Exception as e:
+        logger.error(f"Ошибка обработки JSON: {e}")
+        items = []
 
+    return items
 
 
 @app.post("/telegram")
@@ -185,20 +211,5 @@ async def telegram_webhook(update: dict):
     await dp.feed_update(bot, telegram_update)
     return {"ok": True}
 
-app.include_router(router)
 
-# # Получение ближайшего магазина
-# @app.get("/nearest-store")
-# async def nearest_store(lat: float = Query(...), lon: float = Query(...)):
-#     url = f"https://5ka.ru/api/v2/stores/?latitude={lat}&longitude={lon}"
-#     async with httpx.AsyncClient() as client:
-#         r = await client.get(url)
-#         data = r.json()
-#     if data.get("results"):
-#         store = data["results"][0]
-#         return {
-#             "id": store.get("id"),
-#             "address": store.get("address"),
-#             "store": store
-#         }
-#     return {"error": "Store not found"}
+app.include_router(router)
