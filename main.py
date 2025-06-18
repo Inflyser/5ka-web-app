@@ -102,7 +102,12 @@ async def check_delivery(loc: Location):
 
     async with httpx.AsyncClient() as client:
         try:
-            store_response = await client.get(store_url, headers={"User-Agent": "Mozilla/5.0"})
+            store_response = await client.get(store_url, headers={
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+                "Accept": "application/json, text/plain, */*",
+                "Referer": "https://5ka.ru/",
+                "Origin": "https://5ka.ru"
+            })
             logger.info(f"Store API status: {store_response.status_code}")
         except Exception as e:
             logger.error(f"Ошибка запроса к Store API: {e}")
@@ -116,7 +121,7 @@ async def check_delivery(loc: Location):
             if not stores:
                 return {"success": False, "message": "Нет магазинов рядом"}
 
-            store = stores[0]  # ближайший
+            store = stores[0]
             store_id = store["store_id"]
             address = store["address"]
 
