@@ -97,40 +97,46 @@ router = APIRouter()
 
 @router.post("/check-delivery")
 async def check_delivery(loc: Location):
-    logger.info(f"Координаты: lat={loc.lat}, lon={loc.lon}")
+    logger.info(f"Получены координаты: lat={loc.lat}, lon={loc.lon}")
     store_url = f"https://5d.5ka.ru/api/orders/v1/orders/stores/?lon={loc.lon}&lat={loc.lat}"
+
+    HEADERS = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+        "Accept": "application/json, text/plain, */*",
+        "Referer": "https://5ka.ru/",
+        "Origin": "https://5ka.ru"
+    }
 
     async with httpx.AsyncClient() as client:
         try:
-            store_response = await client.get(store_url, headers={
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
-                "Accept": "application/json, text/plain, */*",
-                "Referer": "https://5ka.ru/",
-                "Origin": "https://5ka.ru"
-            })
-            logger.info(f"Store API status: {store_response.status_code}")
-        except Exception as e:
-            logger.error(f"Ошибка запроса к Store API: {e}")
+            response = await client.get(store_url, headers=HEADERS)
+            response.raise_for_status()
+        except httpx.HTTPError as e:
+            logger.error(f"Ошибка HTTP при запросе к API магазина: {e}")
             return {"success": False, "message": "Ошибка запроса к магазину"}
 
-        if store_response.status_code != 200:
-            return {"success": False, "message": "Магазины не найдены"}
+    try:
+        stores_data = response.json()
+        if not stores_data:
+            logger.info("Нет магазинов рядом.")
+            return {"success": False, "message": "Нет магазинов рядом"}
 
-        try:
-            stores = store_response.json()
-            if not stores:
-                return {"success": False, "message": "Нет магазинов рядом"}
+        store = stores_data[0]
+        store_id = store.get("store_id")
+        address = store.get("address")
 
-            store = stores[0]
-            store_id = store["store_id"]
-            address = store["address"]
+        if not store_id or not address:
+            logger.error("Некорректный формат данных магазина.")
+            return {"success": False, "message": "Ошибка в формате данных"}
 
-            logger.info(f"Ближайший магазин: {store_id} - {address}")
+        logger.info(f"Найден магазин: {store_id}, адрес: {address}")
+        return {"success": True, "store_id": store_id, "address": address}
 
-            return {"success": True, "store_id": store_id, "address": address}
-        except Exception as e:
-            logger.error(f"Ошибка обработки данных магазинов: {e}")
-            return {"success": False, "message": "Ошибка обработки ответа"}
+    except Exception as e:
+        logger.error(f"Ошибка обработки ответа от API: {e}")
+        return {"success": False, "message": "Ошибка обработки данных"}
+    
+    
 
 
 @app.get("/store-items")
