@@ -95,18 +95,26 @@ class Location(BaseModel):
 router = APIRouter()
 
 
+
+
 @router.post("/check-delivery")
 async def check_delivery(loc: Location):
     logger.info(f"Получены координаты: lat={loc.lat}, lon={loc.lon}")
     store_url = f"https://5d.5ka.ru/api/orders/v1/orders/stores/?lon={loc.lon}&lat={loc.lat}"
 
     HEADERS = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 Firefox/125.0",
         "Accept": "application/json, text/plain, */*",
+        "Accept-Language": "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
         "Referer": "https://5ka.ru/",
-        "Origin": "https://5ka.ru"
+        "Origin": "https://5ka.ru",
+        "Connection": "keep-alive",
+        "Sec-Fetch-Site": "same-origin",
+        "Sec-Fetch-Mode": "cors",
+        "Sec-Fetch-Dest": "empty"
     }
-
+    
+   
     async with httpx.AsyncClient() as client:
         try:
             response = await client.get(store_url, headers=HEADERS)
