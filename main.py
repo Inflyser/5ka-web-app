@@ -88,6 +88,7 @@ async def check_delivery(loc: Location):
     store_url = f"https://5d.5ka.ru/api/orders/v1/orders/stores/?lon={loc.lon}&lat={loc.lat}"
     base_url = "https://5ka.ru"
 
+    # Заголовки без куки, для первого запроса, чтобы получить сессию (если нужно)
     HEADERS = {
         "x-app-version": "0.1.1.dev",
         "x-device-id": "afc296b4-0312-461f-98cd-e1755c4ed629",
@@ -102,19 +103,18 @@ async def check_delivery(loc: Location):
         "accept-language": "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
     }
 
+    # Твои реальные куки из браузера (актуальные, которые у тебя есть)
+    COOKIES = {
+        "server_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0b2tlbiIsInNlc3Npb25JZCI6IjY4MGVlNjA0NWRiNWZhOTY4Y2NhYzlhYTliYzM2MTA5NGZkYjM0ZmU0OTAyY2YwMWM4NTdiNzVkYzk4ZWNlNDAiLCJleHAiOjE3NTA1NDc3NDAsImlhdCI6MTc1MDQ2MTM0MCwianRpIjoiZDEzOGQzYjQtMTE4NC00YWE5LWFjNWQtNjJmYTQ4YTAwZjEyIn0.xWqcAGRzsS9fGfBSwZLAqX8cf6DIeT2ftstnFycwXS8",
+        "sessionid": "3:1750168435.5.0.1749907214924:PYN0vA:5fef.1.2:1|1076966228.0.2.3:1749907214|3:10309105.877871.yZNVHfFPxx9JFtUIV2bImg78jBE",
+        "session_token_timestamp": "1750547740456",
+        # добавь другие куки по необходимости
+    }
+
     try:
         async with httpx.AsyncClient() as client:
-            # 1. Получаем cookies с главной страницы сайта (или другого подходящего url)
-            cookie_response = await client.get(base_url, headers=HEADERS)
-            cookie_response.raise_for_status()
-            cookies = cookie_response.cookies
-
-            # 2. Формируем заголовок Cookie из полученных cookies
-            cookie_header = "; ".join([f"{k}={v}" for k, v in cookies.items()])
-            HEADERS["cookie"] = cookie_header
-
-            # 3. Делаем запрос к API с актуальными cookies
-            response = await client.get(store_url, headers=HEADERS)
+            # Вместо получения cookies с главной страницы сразу используем твои реальные куки
+            response = await client.get(store_url, headers=HEADERS, cookies=COOKIES)
             response.raise_for_status()
 
             data = response.json()
@@ -124,6 +124,12 @@ async def check_delivery(loc: Location):
     except httpx.HTTPError as e:
         logger.error(f"Ошибка при получении данных: {e}")
         raise HTTPException(status_code=500, detail="Ошибка при получении данных с 5ka API")
+    
+@app.post("/telegram")
+async def telegram_webhook(update: dict):
+    telegram_update = Update.model_validate(update)
+    await dp.feed_update(bot, telegram_update)
+    return {"ok": True}
 
 # === ПОДКЛЮЧЕНИЕ РОУТЕРОВ ===
 app.include_router(api_router)
