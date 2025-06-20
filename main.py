@@ -108,9 +108,9 @@ async def check_delivery(loc: Location):
 
     # Подставь свои актуальные куки из браузера
     COOKIES = {
-        "server_token": "твой_токен_здесь",
-        "sessionid": "твой_sessionid_здесь",
-        "session_token_timestamp": "твой_timestamp_здесь",
+        "server_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0b2tlbiIsInNlc3Npb25JZCI6IjY4MGVlNjA0NWRiNWZhOTY4Y2NhYzlhYTliYzM2MTA5NGZkYjM0ZmU0OTAyY2YwMWM4NTdiNzVkYzk4ZWNlNDAiLCJleHAiOjE3NTA1NDc3NDAsImlhdCI6MTc1MDQ2MTM0MCwianRpIjoiZDEzOGQzYjQtMTE4NC00YWE5LWFjNWQtNjJmYTQ4YTAwZjEyIn0.xWqcAGRzsS9fGfBSwZLAqX8cf6DIeT2ftstnFycwXS8",
+        "sessionid": "3:1750168435.5.0.1749907214924:PYN0vA:5fef.1.2:1|1076966228.0.2.3:1749907214|3:10309105.877871.yZNVHfFPxx9JFtUIV2bImg78jBE",
+        "session_token_timestamp": "1750547740456",
         # Добавь остальные куки, если нужно
     }
 
