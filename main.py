@@ -100,7 +100,10 @@ router = APIRouter()
 @router.post("/check-delivery")
 async def check_delivery(loc: Location):
     logger.info(f"Получены координаты: lat={loc.lat}, lon={loc.lon}")
-    store_url = f"https://5d.5ka.ru/api/orders/v1/orders/stores/?lon={loc.lon}&lat={loc.lat}"
+
+    store_url = (
+        f"https://5d.5ka.ru/api/orders/v1/orders/stores/?lon={loc.lon}&lat={loc.lat}"
+    )
 
     HEADERS = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 Firefox/125.0",
@@ -111,10 +114,12 @@ async def check_delivery(loc: Location):
         "Connection": "keep-alive",
         "Sec-Fetch-Site": "same-origin",
         "Sec-Fetch-Mode": "cors",
-        "Sec-Fetch-Dest": "empty"
+        "Sec-Fetch-Dest": "empty",
+        "Host": "5d.5ka.ru",
+        "X-Requested-With": "XMLHttpRequest",
+        "Cookie": "spid=1749845165342_d9758ee051d22005b531d79bc8a52ce9_6rxd6xewi00r4vup; _ym_uid=1749845167776844367; ...",  # вставь весь свой куки полностью
     }
-    
-   
+
     async with httpx.AsyncClient() as client:
         try:
             response = await client.get(store_url, headers=HEADERS)
@@ -143,8 +148,6 @@ async def check_delivery(loc: Location):
     except Exception as e:
         logger.error(f"Ошибка обработки ответа от API: {e}")
         return {"success": False, "message": "Ошибка обработки данных"}
-    
-    
 
 
 @app.get("/store-items")
