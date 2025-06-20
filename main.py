@@ -88,7 +88,7 @@ async def check_delivery(loc: Location):
     # Формируем URL с координатами, округляя их до 6 знаков
     store_url = (
         f"https://5d.5ka.ru/api/orders/v1/orders/stores/?"
-        f"lon={loc.lon:.6f}&lat={loc.lat:.6f}"
+        f"lon={loc.lon}&lat={loc.lat}"
     )
     base_url = "https://5ka.ru"
 
