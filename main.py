@@ -113,7 +113,6 @@ async def check_delivery(loc: Location):
         "session_token_timestamp": "timestamp_here",
     }
 
-    # Подготавливаем конфигурацию прокси
     proxies = None
     if HTTP_PROXY:
         proxies = {
@@ -145,7 +144,7 @@ async def check_delivery(loc: Location):
     except httpx.RequestError as e:
         logger.error(f"Ошибка соединения с 5ka API: {e}")
         raise HTTPException(status_code=500, detail="Проблема с подключением к 5ka API")
-    
+
 @app.post("/telegram")
 async def telegram_webhook(update: dict):
     telegram_update = Update.model_validate(update)
