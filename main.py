@@ -81,11 +81,12 @@ class Location(BaseModel):
 
 api_router = APIRouter()
 
+HTTP_PROXY = os.getenv("proxy.toolip.io:331***:8c5906b99fbd1c0***:iuz5k7bp***")  # например "http://user:pass@proxyserver:port" или "http://proxyserver:port"
+
 @api_router.post("/check-delivery")
 async def check_delivery(loc: Location):
     logger.info(f"Получены координаты: lat={loc.lat}, lon={loc.lon}")
 
-    # Формируем URL с координатами, округляя их до 6 знаков
     store_url = (
         f"https://5d.5ka.ru/api/orders/v1/orders/stores/?"
         f"lon={loc.lon}&lat={loc.lat}"
@@ -106,27 +107,33 @@ async def check_delivery(loc: Location):
         "accept-language": "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
     }
 
-    # Подставь свои актуальные куки из браузера
     COOKIES = {
-        "server_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0b2tlbiIsInNlc3Npb25JZCI6IjY4MGVlNjA0NWRiNWZhOTY4Y2NhYzlhYTliYzM2MTA5NGZkYjM0ZmU0OTAyY2YwMWM4NTdiNzVkYzk4ZWNlNDAiLCJleHAiOjE3NTA1NDc3NDAsImlhdCI6MTc1MDQ2MTM0MCwianRpIjoiZDEzOGQzYjQtMTE4NC00YWE5LWFjNWQtNjJmYTQ4YTAwZjEyIn0.xWqcAGRzsS9fGfBSwZLAqX8cf6DIeT2ftstnFycwXS8",
-        "sessionid": "3:1750168435.5.0.1749907214924:PYN0vA:5fef.1.2:1|1076966228.0.2.3:1749907214|3:10309105.877871.yZNVHfFPxx9JFtUIV2bImg78jBE",
-        "session_token_timestamp": "1750547740456",
-        # Добавь остальные куки, если нужно
+        "server_token": "your_token_here",
+        "sessionid": "your_sessionid_here",
+        "session_token_timestamp": "timestamp_here",
     }
 
+    # Подготавливаем конфигурацию прокси
+    proxies = None
+    if HTTP_PROXY:
+        proxies = {
+            "http://": HTTP_PROXY,
+            "https://": HTTP_PROXY,
+        }
+
     try:
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(proxies=proxies) as client:
             response = await client.get(store_url, headers=HEADERS, cookies=COOKIES)
 
             logger.info(f"Ответ от 5ka API: {response.status_code} — {response.text}")
 
-            response.raise_for_status()  # выбросит ошибку при 4xx/5xx
+            response.raise_for_status()
 
             data = response.json()
 
             if "results" in data and len(data["results"]) > 0:
                 logger.info("Магазин(ы) найдены, доставка доступна")
-                return {"status": "ok", "store": data["results"][0]}  # или весь список, если нужно
+                return {"status": "ok", "store": data["results"][0]}
             else:
                 logger.warning("Магазины не найдены по координатам")
                 raise HTTPException(status_code=404, detail="В вашем районе доставка недоступна")
