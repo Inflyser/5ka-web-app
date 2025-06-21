@@ -117,15 +117,27 @@ async def check_delivery(loc: Location):
     try:
         async with httpx.AsyncClient() as client:
             response = await client.get(store_url, headers=HEADERS, cookies=COOKIES)
-            response.raise_for_status()
+
+            logger.info(f"Ответ от 5ka API: {response.status_code} — {response.text}")
+
+            response.raise_for_status()  # выбросит ошибку при 4xx/5xx
 
             data = response.json()
-            logger.info("Данные о доставке получены успешно")
-            return data
 
-    except httpx.HTTPError as e:
-        logger.error(f"Ошибка при получении данных: {e}")
-        raise HTTPException(status_code=500, detail="Ошибка при получении данных с 5ka API")
+            if "results" in data and len(data["results"]) > 0:
+                logger.info("Магазин(ы) найдены, доставка доступна")
+                return {"status": "ok", "store": data["results"][0]}  # или весь список, если нужно
+            else:
+                logger.warning("Магазины не найдены по координатам")
+                raise HTTPException(status_code=404, detail="В вашем районе доставка недоступна")
+
+    except httpx.HTTPStatusError as e:
+        logger.error(f"Ошибка HTTP от 5ka: {e.response.status_code} — {e.response.text}")
+        raise HTTPException(status_code=500, detail="Ошибка от сервера 5ka")
+
+    except httpx.RequestError as e:
+        logger.error(f"Ошибка соединения с 5ka API: {e}")
+        raise HTTPException(status_code=500, detail="Проблема с подключением к 5ka API")
     
 @app.post("/telegram")
 async def telegram_webhook(update: dict):
