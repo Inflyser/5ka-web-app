@@ -25,7 +25,7 @@ load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 FRONTEND_URL = "https://5ka-front.netlify.app"
 WEBHOOK_URL = "https://fiveka-web-app.onrender.com/telegram"
-PROXY_URL = os.getenv("TOOLIP_PROXY")  # Пример: "http://user:pass@host:port"
+PROXY_URL = os.getenv("TOOLIP_PROXY")  
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
