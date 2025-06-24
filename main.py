@@ -120,12 +120,14 @@ async def check_delivery(loc: Location):
                     mode=PurchaseMode.DELIVERY
                 )
                 print(f"Categories list output: {catalog!s:.100s}...\n")
-
+                print(type(catalog))
+                print(catalog)
                 return {
                     "status": "ok",
                     "store": store,
                     "categories": catalog  # Можно также вернуть список категорий
                 }
+                
             else:
                 logger.warning("Нет доступных магазинов")
                 raise HTTPException(status_code=404, detail="Магазин не найден по координатам")
