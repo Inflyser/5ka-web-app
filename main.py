@@ -115,7 +115,7 @@ async def check_delivery(loc: Location):
 
                 catalog = await API.categories_list(
                     subcategories=True,
-                    mode=Pyaterochka.PurchaseMode.DELIVERY
+                    mode=PurchaseMode.DELIVERY
                 )
                 print(f"Categories list output: {catalog!s:.100s}...\n")
 
