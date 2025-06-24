@@ -110,7 +110,18 @@ async def check_delivery(loc: Location):
             store = await API.find_store(longitude=loc.lon, latitude=loc.lat)
             if store:
                 logger.info("Магазин найден")
-                return {"status": "ok", "store": store}
+
+                catalog = await API.categories_list(
+                    subcategories=True,
+                    mode=API.PurchaseMode.DELIVERY
+                )
+                print(f"Categories list output: {catalog!s:.100s}...\n")
+
+                return {
+                    "status": "ok",
+                    "store": store,
+                    "categories": catalog  # Можно также вернуть список категорий
+                }
             else:
                 logger.warning("Нет доступных магазинов")
                 raise HTTPException(status_code=404, detail="Магазин не найден по координатам")
