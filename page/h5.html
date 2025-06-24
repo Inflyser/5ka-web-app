@@ -18,6 +18,11 @@
 <body>
 
     <h1>Категории</h1>
+    <style>
+        ul { list-style-type: none; padding-left: 1em; }
+        li { margin-bottom: 10px; }
+        img { vertical-align: middle; margin-right: 5px; }
+    </style>
     <ul id="categoriesList"></ul>
 
     <script>
@@ -47,6 +52,11 @@
             const categories = JSON.parse(rawCategories);
             renderCategories(categories);
         });
+                // Загружаем категории из localStorage и рендерим
+        document.addEventListener("DOMContentLoaded", () => {
+            const rawCategories = JSON.parse(localStorage.getItem('categories'));
+            renderCategories(rawCategories);
+        });
     </script>
 
     <div class="bottom-nav">
@@ -70,5 +80,6 @@
 
     <script src="../scripts/back-connect.js"></script>
     <script src="../scripts/map.js"></script>
+    <script src="../scripts/categories.js"></script>
 </body>
 </html>
