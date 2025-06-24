@@ -20,7 +20,6 @@ async function getUserLocation() {
 
 
 
-// Проверка доставки
 async function checkDelivery(lat, lon) {
     const response = await fetch("https://fiveka-web-app.onrender.com/check-delivery", {
         method: "POST",
@@ -29,46 +28,31 @@ async function checkDelivery(lat, lon) {
         },
         body: JSON.stringify({ lat, lon }),
     });
-
     if (!response.ok) {
         const error = await response.json();
         throw new Error(error.detail || "Ошибка при проверке доставки");
     }
-
-    return await response.json(); // { delivery, store_id, ... }
+    return await response.json();
 }
-
 
 async function handleDeliveryCheck() {
     try {
         const coords = map.getCenter(); // [lat, lon]
         const lat = coords[0];
         const lon = coords[1];
-
         console.log("📍 Проверка координат:", lat, lon);
-
         const deliveryResult = await checkDelivery(lat, lon);
-
-        // ✅ Показываем адрес, полученный с бэкенда:
         const deliveryAddress = deliveryResult.address || "Адрес не определён";
         document.getElementById("address").textContent = "📍 Ваш адрес: " + deliveryAddress;
-
-        if (!deliveryResult?.store_id) {
-            document.getElementById("status").textContent = "❌ Доставка недоступна по вашему адресу.";
+        if (deliveryResult && deliveryResult.categories) {
+            // Сохраняем категории в localStorage
+            localStorage.setItem('categories', JSON.stringify(deliveryResult.categories));
+            // Переходим на страницу h5.html
+            window.location.href = '/h5.html';
             return;
+        } else {
+            document.getElementById("status").textContent = "❌ Категории не получены";
         }
-
-        const storeId = deliveryResult.store_id;
-
-        document.getElementById("status").textContent =
-            `✅ Доставка доступна!\n🏪 Магазин ID: ${storeId}\n📍 Адрес доставки: ${deliveryAddress}`;
-
-        const itemsRes = await fetch(`https://fiveka-web-app.onrender.com/store-items?store_id=${storeId}`);
-        if (!itemsRes.ok) throw new Error("Не удалось загрузить товары");
-
-        const items = await itemsRes.json();
-        console.log("🛒 Товары магазина:", items);
-
     } catch (error) {
         console.error("Ошибка:", error);
         const statusElem = document.getElementById("status");
@@ -78,11 +62,9 @@ async function handleDeliveryCheck() {
     }
 }
 
-// Привязка к кнопке
 document.addEventListener("DOMContentLoaded", () => {
     const button = document.getElementById("checkDeliveryBtn");
     if (button) {
         button.addEventListener("click", handleDeliveryCheck);
     }
 });
-
