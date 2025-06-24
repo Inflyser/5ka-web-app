@@ -25,39 +25,7 @@
     </style>
     <ul id="categoriesList"></ul>
 
-    <script>
-        function renderCategories(categories) {
-            const listElem = document.getElementById('categoriesList');
-            listElem.innerHTML = ''; // очистить
 
-            if (!categories || categories.length === 0) {
-                listElem.innerHTML = '<li>Категории не найдены</li>';
-                return;
-            }
-
-            categories.forEach(cat => {
-                const li = document.createElement('li');
-                li.textContent = cat.name || 'Без названия';
-                listElem.appendChild(li);
-            });
-        }
-
-        document.addEventListener("DOMContentLoaded", () => {
-            const rawCategories = localStorage.getItem('categories');
-            if (!rawCategories) {
-                alert("Категории не найдены в localStorage.");
-                return;
-            }
-
-            const categories = JSON.parse(rawCategories);
-            renderCategories(categories);
-        });
-                // Загружаем категории из localStorage и рендерим
-        document.addEventListener("DOMContentLoaded", () => {
-            const rawCategories = JSON.parse(localStorage.getItem('categories'));
-            renderCategories(rawCategories);
-        });
-    </script>
 
     <div class="bottom-nav">
       <a href="../index.html" class="nav-item">
