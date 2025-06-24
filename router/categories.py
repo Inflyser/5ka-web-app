@@ -1,8 +1,9 @@
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
-import json
 
 router = APIRouter()
+
+flat_categories = []  # Сюда будем записывать актуальные категории при запросе /check-delivery
 
 def flatten_categories(raw_categories: list) -> list:
     result = []
@@ -20,12 +21,6 @@ def flatten_categories(raw_categories: list) -> list:
                 "parent_name": parent_name
             })
     return result
-
-# Загружаешь JSON с категориями (путь к файлу укажи свой)
-with open("your_raw_data.json", "r", encoding="utf-8") as f:
-    data = json.load(f)
-
-flat_categories = flatten_categories(data["categories"])
 
 @router.get("/categories")
 async def get_categories():
