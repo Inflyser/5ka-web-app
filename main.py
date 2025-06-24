@@ -5,6 +5,8 @@ import logging
 import os
 
 from pyaterochka_api import Pyaterochka
+from pyaterochka_api import PurchaseMode
+
 from fastapi import FastAPI, APIRouter, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -113,7 +115,7 @@ async def check_delivery(loc: Location):
 
                 catalog = await API.categories_list(
                     subcategories=True,
-                    mode=API.PurchaseMode.DELIVERY
+                    mode=Pyaterochka.PurchaseMode.DELIVERY
                 )
                 print(f"Categories list output: {catalog!s:.100s}...\n")
 
