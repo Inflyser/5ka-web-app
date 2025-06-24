@@ -14,6 +14,8 @@ from contextlib import asynccontextmanager
 from pydantic import BaseModel
 from dotenv import load_dotenv
 
+from router import categories
+
 from aiogram import Bot, Dispatcher, Router
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
@@ -131,6 +133,7 @@ async def check_delivery(loc: Location):
     except Exception as e:
         logger.exception("Ошибка при получении магазина через Pyaterochka API")
         raise HTTPException(status_code=500, detail=str(e))
+    
 
 @app.post("/telegram")
 async def telegram_webhook(update: dict):
@@ -140,3 +143,5 @@ async def telegram_webhook(update: dict):
 
 # === Роутеры ===
 app.include_router(api_router)
+
+app.include_router(categories.router)
