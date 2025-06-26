@@ -21,15 +21,14 @@ async function getUserLocation() {
 let debounceTimeout;
 let lastCoords = null;
 
-map.on('moveend', async () => {
-    const coords = map.getCenter(); // [lat, lon]
+map.events.add('boundschange', async () => {
+    const coords = map.getCenter();
     const lat = coords[0];
     const lon = coords[1];
     lastCoords = coords;
 
-    // Дебаунс, чтобы не спамить запросами
     if (debounceTimeout) clearTimeout(debounceTimeout);
-    debounceTimeout = setTimeout(() => preloadStore(lat, lon), 1000); // 1 секунда паузы
+    debounceTimeout = setTimeout(() => preloadStore(lat, lon), 1000);
 });
 
 let preloadedStore = null;
