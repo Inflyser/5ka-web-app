@@ -1,9 +1,9 @@
 function renderCategories(rawCategories) {
     const listElem = document.getElementById('categoriesList');
-    listElem.innerHTML = ''; // Очистить
+    listElem.innerHTML = '';
 
     if (!rawCategories || rawCategories.length === 0) {
-        listElem.innerHTML = '<li>Категории не найдены</li>';
+        listElem.innerHTML = '<p>Категории не найдены</p>';
         return;
     }
 
@@ -11,28 +11,43 @@ function renderCategories(rawCategories) {
         const parentName = parent.name || 'Без названия';
         const parentId = parent.id;
 
-        const parentLi = document.createElement('li');
-        parentLi.innerHTML = `<strong>${parentName}</strong> (ID: ${parentId})`;
-        listElem.appendChild(parentLi);
+        const categoryBlock = document.createElement('div');
+        categoryBlock.className = 'category-block';
 
-        const subUl = document.createElement('ul');
-        subUl.classList.add('subcategory-grid');
+        const categoryTitle = document.createElement('div');
+        categoryTitle.className = 'category-title';
+        categoryTitle.textContent = parentName;
+
+        const subGrid = document.createElement('div');
+        subGrid.className = 'subcategory-grid';
 
         parent.categories.forEach(sub => {
-            const subLi = document.createElement('li');
-            subLi.innerHTML = `
-                <div class="subcategory-card">
-                    <img src="${sub.image_link}" alt="${sub.name}" class="subcategory-image">
-                    <div class="subcategory-info">
-                        <span class="subcategory-name">${sub.name}</span>
-                        <small class="subcategory-id" style="color:${sub.title_color}">ID: ${sub.id}</small>
-                    </div>
-                </div>
-            `;
-            subUl.appendChild(subLi);
+            const card = document.createElement('div');
+            card.className = 'subcategory-card';
+
+            const img = document.createElement('img');
+            img.className = 'subcategory-image';
+            img.src = sub.image_link;
+            img.alt = sub.name;
+
+            const name = document.createElement('div');
+            name.className = 'subcategory-name';
+            name.textContent = sub.name;
+
+            const id = document.createElement('div');
+            id.className = 'subcategory-id';
+            id.textContent = `ID: ${sub.id}`;
+
+            card.appendChild(img);
+            card.appendChild(name);
+            card.appendChild(id);
+
+            subGrid.appendChild(card);
         });
 
-        listElem.appendChild(subUl);
+        categoryBlock.appendChild(categoryTitle);
+        categoryBlock.appendChild(subGrid);
+        listElem.appendChild(categoryBlock);
     });
 }
 
