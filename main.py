@@ -120,8 +120,6 @@ async def check_delivery(loc: Location):
                     mode=PurchaseMode.DELIVERY
                 )
                 print(f"Categories list output: {catalog!s:.100s}...\n")
-                print(type(catalog))
-                print(catalog)
                 return {
                     "status": "ok",
                     "store": store,
