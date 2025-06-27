@@ -8,6 +8,12 @@ function renderCategories(rawCategories) {
     }
 
     rawCategories.forEach(parent => {
+         const matchedSubs = parent.categories.filter(sub =>
+            sub.name.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+
+        if (matchedSubs.length === 0) return;
+
         const parentName = parent.name || 'Без названия';
         const parentId = parent.id;
 
@@ -21,7 +27,7 @@ function renderCategories(rawCategories) {
         const subGrid = document.createElement('div');
         subGrid.className = 'subcategory-grid';
 
-        parent.categories.forEach(sub => {
+        matchedSubs.forEach(sub => {
             const card = document.createElement('div');
             card.className = 'subcategory-card';
 
@@ -52,6 +58,12 @@ function renderCategories(rawCategories) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-    const rawCategories = JSON.parse(localStorage.getItem('categories'));
+    const rawCategories = JSON.parse(localStorage.getItem('categories')) || [];
     renderCategories(rawCategories);
+
+    const searchInput = document.getElementById('searchInput');
+    searchInput.addEventListener('input', (e) => {
+        const query = e.target.value.trim();
+        renderCategories(rawCategories, query);
+    });
 });
