@@ -39,10 +39,31 @@ function renderCategories(rawCategories, searchQuery = '') {
             name.className = 'subcategory-name';
             name.textContent = sub.name;
 
-            // Расположение: сначала картинка, потом текст (как ты просил)
             card.appendChild(name);
             card.appendChild(img);
-            
+
+            // Добавляем обработчик клика для запроса товаров этой категории
+            card.addEventListener('click', async () => {
+                try {
+                    // Отображаем индикатор загрузки, очистка списка товаров
+                    const productsListElem = document.getElementById('productsList');
+                    productsListElem.innerHTML = 'Загрузка товаров...';
+
+                    // Получаем координаты из localStorage или другого источника (например, заранее сохранённые)
+                    const coords = JSON.parse(localStorage.getItem('userCoords'));
+                    if (!coords) {
+                        productsListElem.innerHTML = 'Ошибка: координаты пользователя не найдены.';
+                        return;
+                    }
+
+                    // Запрос на бек с координатами + category_id
+                    const productsData = await fetchProducts(coords.lat, coords.lon, sub.id);
+                    renderProducts(productsData.products);
+                } catch (err) {
+                    console.error(err);
+                    document.getElementById('productsList').innerHTML = 'Ошибка при загрузке товаров.';
+                }
+            });
 
             subGrid.appendChild(card);
         });
@@ -52,14 +73,3 @@ function renderCategories(rawCategories, searchQuery = '') {
         listElem.appendChild(categoryBlock);
     });
 }
-
-document.addEventListener("DOMContentLoaded", () => {
-    const rawCategories = JSON.parse(localStorage.getItem('categories')) || [];
-    renderCategories(rawCategories);
-
-    const searchInput = document.getElementById('searchInput');
-    searchInput.addEventListener('input', (e) => {
-        const query = e.target.value.trim();
-        renderCategories(rawCategories, query);
-    });
-});

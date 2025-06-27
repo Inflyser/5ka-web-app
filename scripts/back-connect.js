@@ -41,13 +41,19 @@ async function handleDeliveryCheck() {
         const lat = coords[0];
         const lon = coords[1];
         console.log("📍 Проверка координат:", lat, lon);
+
+        // Сохраняем координаты
+        localStorage.setItem('userCoords', JSON.stringify({ lat, lon }));
+
         const deliveryResult = await checkDelivery(lat, lon);
         const deliveryAddress = deliveryResult.address || "Адрес не определён";
         document.getElementById("address").textContent = "📍 Ваш адрес: " + deliveryAddress;
+
         if (deliveryResult && deliveryResult.categories) {
-            // Сохраняем категории в localStorage
+            // Сохраняем категории
             localStorage.setItem('categories', JSON.stringify(deliveryResult.categories));
-            // Переходим на страницу h5.html
+
+            // Переходим на страницу с выбором категории
             window.location.href = 'h5.html';
             return;
         } else {
@@ -68,3 +74,19 @@ document.addEventListener("DOMContentLoaded", () => {
         button.addEventListener("click", handleDeliveryCheck);
     }
 });
+
+async function fetchProducts(lat, lon, category_id) {
+    const response = await fetch("https://fiveka-web-app.onrender.com/check-delivery", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ lat, lon, category_id }),
+    });
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || "Ошибка при получении товаров");
+    }
+    return await response.json();
+}
+
