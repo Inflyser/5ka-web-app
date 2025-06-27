@@ -6,6 +6,7 @@ import os
 
 from pyaterochka_api import Pyaterochka
 from pyaterochka_api import PurchaseMode
+from typing import Optional
 
 from fastapi import FastAPI, APIRouter, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -98,6 +99,7 @@ async def ping():
 class Location(BaseModel):
     lat: float
     lon: float
+    category_id: Optional[str] = None
 
 api_router = APIRouter()
 
@@ -120,12 +122,24 @@ async def check_delivery(loc: Location):
                     mode=PurchaseMode.DELIVERY
                 )
                 print(f"Categories list output: {catalog!s:.100s}...\n")
+
+                # Определяем category_id: либо из запроса, либо первую из списка
+                category_id = loc.category_id or (catalog[0]['id'] if catalog else None)
+
+                products = []
+                if category_id:
+                    products = await API.products_list(category_id, limit=100)
+                    print(f"Items list output: {products!s:.100s}...\n")
+                else:
+                    logger.warning("Категория не указана и список категорий пуст")
+
                 return {
                     "status": "ok",
                     "store": store,
-                    "categories": catalog  # Можно также вернуть список категорий
+                    "categories": catalog,
+                    "products": products
                 }
-                
+
             else:
                 logger.warning("Нет доступных магазинов")
                 raise HTTPException(status_code=404, detail="Магазин не найден по координатам")
