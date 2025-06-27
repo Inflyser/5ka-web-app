@@ -18,21 +18,21 @@ async function getUserLocation() {
     });
 }
 
-let debounceTimeout;
-let lastCoords = null;
+// let debounceTimeout;
+// let lastCoords = null;
 
-map.events.add('boundschange', async () => {
-    const coords = map.getCenter();
-    const lat = coords[0];
-    const lon = coords[1];
-    lastCoords = coords;
+// map.events.add('boundschange', async () => {
+//     const coords = map.getCenter();
+//     const lat = coords[0];
+//     const lon = coords[1];
+//     lastCoords = coords;
 
-    if (debounceTimeout) clearTimeout(debounceTimeout);
-    debounceTimeout = setTimeout(() => preloadStore(lat, lon), 1000);
-});
+//     if (debounceTimeout) clearTimeout(debounceTimeout);
+//     debounceTimeout = setTimeout(() => preloadStore(lat, lon), 1000);
+// });
 
-let preloadedStore = null;
-let preloadedCategories = null;
+// let preloadedStore = null;
+// let preloadedCategories = null;
 
 async function preloadStore(lat, lon) {
     try {
