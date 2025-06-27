@@ -18,43 +18,7 @@ async function getUserLocation() {
     });
 }
 
-let debounceTimeout;
-let lastCoords = null;
 
-map.events.add('boundschange', async () => {
-    const coords = map.getCenter();
-    const lat = coords[0];
-    const lon = coords[1];
-    lastCoords = coords;
-
-    if (debounceTimeout) clearTimeout(debounceTimeout);
-    debounceTimeout = setTimeout(() => preloadStore(lat, lon), 1000);
-});
-
-let preloadedStore = null;
-let preloadedCategories = null;
-
-async function preloadStore(lat, lon) {
-    try {
-        const response = await fetch("https://fiveka-web-app.onrender.com/check-delivery", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ lat, lon }),
-        });
-
-        if (!response.ok) return;
-
-        const result = await response.json();
-        preloadedStore = result.store;
-        preloadedCategories = result.categories;
-
-        console.log("✅ Предзагружен магазин и категории", preloadedStore, preloadedCategories);
-    } catch (err) {
-        console.warn("❌ Не удалось предзагрузить магазин", err);
-    }
-}
 
 async function checkDelivery(lat, lon) {
     const response = await fetch("https://fiveka-web-app.onrender.com/check-delivery", {

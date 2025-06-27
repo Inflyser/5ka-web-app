@@ -15,6 +15,7 @@ function searchAddress() {
     });
 }
 
+
 ymaps.ready(function () {
     map = new ymaps.Map("map", {
         center: [55.751574, 37.573856],
@@ -28,7 +29,7 @@ ymaps.ready(function () {
     });
     map.geoObjects.add(centerMarker);
 
-    map.events.add('boundschange', async function () {
+    map.events.add('boundschange', function () {
         const coords = map.getCenter();
         centerMarker.geometry.setCoordinates(coords);
 
@@ -38,12 +39,5 @@ ymaps.ready(function () {
             document.getElementById('address').innerText = 'Адрес: ' + address;
             document.getElementById('address-input').value = address;
         });
-
-        // 👇 Прелоад категорий
-        const lat = coords[0];
-        const lon = coords[1];
-        lastCoords = coords;
-        if (debounceTimeout) clearTimeout(debounceTimeout);
-        debounceTimeout = setTimeout(() => preloadStore(lat, lon), 1000);
     });
 });
