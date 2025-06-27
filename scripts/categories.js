@@ -9,6 +9,7 @@ function renderCategories(rawCategories) {
 
     rawCategories.forEach(parent => {
         const parentName = parent.name || 'Без названия';
+        const parentId = parent.id;
 
         const categoryBlock = document.createElement('div');
         categoryBlock.className = 'category-block';
@@ -24,17 +25,23 @@ function renderCategories(rawCategories) {
             const card = document.createElement('div');
             card.className = 'subcategory-card';
 
-            const name = document.createElement('div');
-            name.className = 'subcategory-name';
-            name.textContent = sub.name;
-
             const img = document.createElement('img');
             img.className = 'subcategory-image';
             img.src = sub.image_link;
             img.alt = sub.name;
 
-            card.appendChild(name);
+            const name = document.createElement('div');
+            name.className = 'subcategory-name';
+            name.textContent = sub.name;
+
+            const id = document.createElement('div');
+            id.className = 'subcategory-id';
+            id.textContent = `ID: ${sub.id}`;
+
             card.appendChild(img);
+            card.appendChild(name);
+            card.appendChild(id);
+
             subGrid.appendChild(card);
         });
 
@@ -43,3 +50,8 @@ function renderCategories(rawCategories) {
         listElem.appendChild(categoryBlock);
     });
 }
+
+document.addEventListener("DOMContentLoaded", () => {
+    const rawCategories = JSON.parse(localStorage.getItem('categories'));
+    renderCategories(rawCategories);
+});
