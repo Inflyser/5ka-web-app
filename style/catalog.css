@@ -1,7 +1,7 @@
 body {
     font-family: sans-serif;
     margin: 0;
-    padding: 1rem;
+    padding: 0.5rem;
     background: #fff;
     color: #111;
 }
@@ -44,10 +44,9 @@ h1 {
 }
 
 .subcategory-image {
-    width: 48px;
-    height: 48px;
-    object-fit: contain;
-    margin-bottom: 8px;
+    width: 72px;
+    height: 72px;
+    margin-bottom: 6px;
 }
 
 .subcategory-name {

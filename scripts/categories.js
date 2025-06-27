@@ -1,4 +1,4 @@
-function renderCategories(rawCategories) {
+function renderCategories(rawCategories, searchQuery = '') {
     const listElem = document.getElementById('categoriesList');
     listElem.innerHTML = '';
 
@@ -8,14 +8,13 @@ function renderCategories(rawCategories) {
     }
 
     rawCategories.forEach(parent => {
-         const matchedSubs = parent.categories.filter(sub =>
+        const matchedSubs = parent.categories.filter(sub =>
             sub.name.toLowerCase().includes(searchQuery.toLowerCase())
         );
 
         if (matchedSubs.length === 0) return;
 
         const parentName = parent.name || 'Без названия';
-        const parentId = parent.id;
 
         const categoryBlock = document.createElement('div');
         categoryBlock.className = 'category-block';
@@ -40,13 +39,10 @@ function renderCategories(rawCategories) {
             name.className = 'subcategory-name';
             name.textContent = sub.name;
 
-            const id = document.createElement('div');
-            id.className = 'subcategory-id';
-            id.textContent = `ID: ${sub.id}`;
-
+            // Расположение: сначала картинка, потом текст (как ты просил)
             card.appendChild(name);
             card.appendChild(img);
-            // card.appendChild(id);
+            
 
             subGrid.appendChild(card);
         });
