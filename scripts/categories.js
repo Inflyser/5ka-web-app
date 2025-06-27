@@ -38,9 +38,9 @@ function renderCategories(rawCategories) {
             id.className = 'subcategory-id';
             id.textContent = `ID: ${sub.id}`;
 
-            card.appendChild(img);
             card.appendChild(name);
-            card.appendChild(id);
+            card.appendChild(img);
+            // card.appendChild(id);
 
             subGrid.appendChild(card);
         });
