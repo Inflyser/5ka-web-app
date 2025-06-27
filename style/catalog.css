@@ -1,14 +1,24 @@
-body {
+dy {
     font-family: sans-serif;
     margin: 0;
-    padding: 0.5rem;
+    padding: 1rem;
     background: #fff;
     color: #111;
 }
 
-h1 {
-    font-size: 1.5rem;
-    margin-bottom: 1rem;
+.search-container {
+    padding: 0 8px;
+    margin-bottom: 16px;
+}
+
+#searchInput {
+    width: 100%;
+    padding: 10px 14px;
+    font-size: 14px;
+    border-radius: 12px;
+    border: 1px solid #ccc;
+    outline: none;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
 }
 
 .category-block {
@@ -19,46 +29,46 @@ h1 {
     font-weight: bold;
     font-size: 1.2rem;
     margin-bottom: 0.5rem;
+    padding-left: 4px;
 }
 
 .subcategory-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
     gap: 12px;
 }
 
 .subcategory-card {
     background-color: #f9f9f9;
     border-radius: 16px;
-    padding: 12px;
+    padding: 10px 10px 0 10px; /* Убрал нижний паддинг */
     display: flex;
     flex-direction: column;
-    align-items: center;
-    text-align: center;
+    align-items: stretch;
+    text-align: left;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     transition: transform 0.2s ease;
+    overflow: hidden;
 }
 
 .subcategory-card:hover {
     transform: translateY(-2px);
 }
 
-.subcategory-image {
-    width: 72px;
-    height: 72px;
-    margin-bottom: 2px;
-}
-
 .subcategory-name {
     font-size: 14px;
     font-weight: 500;
     color: #111;
+    margin-bottom: 0.3em;
+    text-align: left;
 }
 
-.subcategory-id {
-    font-size: 11px;
-    color: #888;
-    margin-top: 4px;
+.subcategory-image {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+    margin: 0; /* убрал отступ */
+    border-radius: 0 0 16px 16px;
 }
 
 .search-container {
