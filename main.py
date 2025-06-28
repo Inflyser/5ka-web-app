@@ -3,7 +3,6 @@ import aiohttp
 import asyncio
 import logging
 import os
-import aioredis
 
 from pyaterochka_api import Pyaterochka
 from pyaterochka_api import PurchaseMode
