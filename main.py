@@ -108,8 +108,8 @@ class ProductQuery(BaseModel):
 api_router = APIRouter()
 
 @api_router.post("/get-store-and-categories")
-async def get_store_and_categories(loc: Location):
-    logger.info(f"Поиск магазина и категорий по координатам: lat={loc.lat}, lon={loc.lon}")
+async def check_delivery(loc: Location):
+    logger.info(f"Проверка доставки для координат: lat={loc.lat}, lon={loc.lon}")
     try:
         async with Pyaterochka(
             proxy=PROXY_URL,
@@ -118,24 +118,29 @@ async def get_store_and_categories(loc: Location):
             trust_env=False
         ) as API:
             store = await API.find_store(longitude=loc.lon, latitude=loc.lat)
-            if not store:
-                raise HTTPException(status_code=404, detail="Магазин не найден")
+            if store:
+                logger.info("Магазин найден")
 
-            catalog = await API.categories_list(
-                subcategories=True,
-                mode=PurchaseMode.DELIVERY
-            )
-
-            return {
-                "status": "ok",
-                "store": store,
-                "store_id": store["id"],  # если в объекте store есть поле id
-                "categories": catalog
-            }
+                catalog = await API.categories_list(
+                    subcategories=True,
+                    mode=PurchaseMode.DELIVERY
+                )
+                print(f"Categories list output: {catalog!s:.100s}...\n")
+                return {
+                    "status": "ok",
+                    "store": store,
+                    "categories": catalog  # Можно также вернуть список категорий
+                }
+                
+            else:
+                logger.warning("Нет доступных магазинов")
+                raise HTTPException(status_code=404, detail="Магазин не найден по координатам")
 
     except Exception as e:
-        logger.exception("Ошибка при получении магазина")
+        logger.exception("Ошибка при получении магазина через Pyaterochka API")
         raise HTTPException(status_code=500, detail=str(e))
+    
+
 
 
 @api_router.post("/get-products")
