@@ -16,8 +16,6 @@ function searchAddress() {
 }
 
 
-
-
 ymaps.ready(function () {
     map = new ymaps.Map("map", {
         center: [55.751574, 37.573856],

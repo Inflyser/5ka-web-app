@@ -1,4 +1,4 @@
-import { getProducts } from '../scripts/back-connect.js';
+import { getProducts } from './back-connect.js';
 
 function renderCategories(rawCategories, searchQuery = '') {
     const listElem = document.getElementById('categoriesList');
