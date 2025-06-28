@@ -21,7 +21,7 @@ async function getUserLocation() {
 
 
 async function checkDelivery(lat, lon) {
-    const response = await fetch("https://fiveka-web-app.onrender.com/check-delivery", {
+    const response = await fetch("https://fiveka-web-app.onrender.com/get-store-and-categories", {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
