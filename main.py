@@ -30,7 +30,7 @@ from aiogram.exceptions import TelegramForbiddenError
 # === НАСТРОЙКИ ===
 load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-FRONTEND_URL = "https://5ka-front.netlify.app/catalog"
+FRONTEND_URL = "https://5ka-front.netlify.app/page/catalog"
 WEBHOOK_URL = "https://fiveka-web-app.onrender.com/telegram"
 PROXY_URL = os.getenv("TOOLIP_PROXY")  
 
