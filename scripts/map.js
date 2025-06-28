@@ -43,3 +43,4 @@ ymaps.ready(function () {
         });
     });
 });
+
