@@ -34,6 +34,7 @@ async function handleDeliveryCheck() {
 
             // Сохраняем store_id для дальнейших запросов
             localStorage.setItem('storeId', deliveryResult.store.id || deliveryResult.store.store_id || deliveryResult.store.code);
+           
 
             // Переходим на страницу с выбором категории
             window.location.href = 'catalog.html';

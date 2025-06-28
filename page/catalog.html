@@ -43,7 +43,7 @@
         
       document.addEventListener("DOMContentLoaded", () => {
           const rawCategories = JSON.parse(localStorage.getItem('categories'));
-          const coords = JSON.parse(localStorage.getItem('userCoords'));
+          const storeId = localStorage.getItem('userStoreId'); // получаем store_id
 
           const categoriesList = document.getElementById('categoriesList');
           const productsList = document.getElementById('productsList');
@@ -57,13 +57,13 @@
 
               productsList.innerHTML = 'Загрузка товаров...';
 
-              if (!coords) {
-                  productsList.innerHTML = 'Ошибка: координаты не найдены';
-                  return;
+              if (!storeId) {
+                productsList.innerHTML = 'Ошибка: store_id не найден';
+                return;
               }
 
               try {
-                  const productsData = await getProducts(coords.lat, coords.lon, categoryId);
+                  const productsData = await getProducts(storeId, categoryId);
                   renderProducts(productsData.products);
               } catch (err) {
                   console.error(err);
