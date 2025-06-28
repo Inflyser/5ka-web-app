@@ -1,4 +1,4 @@
-function renderProducts(products) {
+export function renderProducts(products) {
     const productsListElem = document.getElementById('productsList');
     productsListElem.innerHTML = '';
 
@@ -16,14 +16,12 @@ function renderProducts(products) {
 
         const img = document.createElement('img');
         img.className = 'product-image';
-        img.src = product.image_link || ''; // замените на поле с изображением, если другое
+        img.src = product.image_link || '';
         img.alt = product.name;
 
         const name = document.createElement('div');
         name.className = 'product-name';
         name.textContent = product.name;
-
-        // Можно добавить цену и описание, если есть
 
         card.appendChild(name);
         card.appendChild(img);

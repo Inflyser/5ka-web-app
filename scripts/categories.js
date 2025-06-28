@@ -1,4 +1,4 @@
-function renderCategories(rawCategories, searchQuery = '') {
+export function renderCategories(rawCategories, searchQuery = '', onCategoryClick) {
     const listElem = document.getElementById('categoriesList');
     listElem.innerHTML = '';
 
@@ -14,14 +14,12 @@ function renderCategories(rawCategories, searchQuery = '') {
 
         if (matchedSubs.length === 0) return;
 
-        const parentName = parent.name || 'Без названия';
-
         const categoryBlock = document.createElement('div');
         categoryBlock.className = 'category-block';
 
         const categoryTitle = document.createElement('div');
         categoryTitle.className = 'category-title';
-        categoryTitle.textContent = parentName;
+        categoryTitle.textContent = parent.name || 'Без названия';
 
         const subGrid = document.createElement('div');
         subGrid.className = 'subcategory-grid';
@@ -42,27 +40,9 @@ function renderCategories(rawCategories, searchQuery = '') {
             card.appendChild(name);
             card.appendChild(img);
 
-            // Добавляем обработчик клика для запроса товаров этой категории
-            card.addEventListener('click', async () => {
-                try {
-                    // Отображаем индикатор загрузки, очистка списка товаров
-                    const productsListElem = document.getElementById('productsList');
-                    productsListElem.innerHTML = 'Загрузка товаров...';
-
-                    // Получаем координаты из localStorage или другого источника (например, заранее сохранённые)
-                    const coords = JSON.parse(localStorage.getItem('userCoords'));
-                    if (!coords) {
-                        productsListElem.innerHTML = 'Ошибка: координаты пользователя не найдены.';
-                        return;
-                    }
-
-                    // Запрос на бек с координатами + category_id
-                    const productsData = await fetchProducts(coords.lat, coords.lon, sub.id);
-                    renderProducts(productsData.products);
-                } catch (err) {
-                    console.error(err);
-                    document.getElementById('productsList').innerHTML = 'Ошибка при загрузке товаров.';
-                }
+            // 👉 Клик вызывает внешний обработчик
+            card.addEventListener('click', () => {
+                onCategoryClick?.(sub.id);
             });
 
             subGrid.appendChild(card);
