@@ -50,7 +50,7 @@ async function handleDeliveryCheck() {
             // Сохраняем категории в localStorage
             localStorage.setItem('categories', JSON.stringify(deliveryResult.categories));
             // Переходим на страницу h5.html
-            window.location.href = 'h5.html';
+            window.location.href = 'catalog.html';
             return;
         } else {
             document.getElementById("status").textContent = "❌ Категории не получены";
