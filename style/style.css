@@ -60,7 +60,7 @@
   z-index: 10;
 }
 
-#address {
+.address-teg {
   font-weight: bold;
   margin: 30px 0 0 10px;
   font-size: 24px;
