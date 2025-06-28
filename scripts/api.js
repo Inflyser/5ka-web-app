@@ -1,4 +1,3 @@
-// js/api.js
 export async function getProducts(store_id, category_id) {
     const response = await fetch("https://fiveka-web-app.onrender.com/get-products", {
         method: "POST",
