@@ -3,6 +3,7 @@ import aiohttp
 import asyncio
 import logging
 import os
+import aioredis
 
 from pyaterochka_api import Pyaterochka
 from pyaterochka_api import PurchaseMode
@@ -14,6 +15,7 @@ from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 from pydantic import BaseModel
 from dotenv import load_dotenv
+
 
 from router import categories
 
@@ -28,7 +30,7 @@ from aiogram.exceptions import TelegramForbiddenError
 # === НАСТРОЙКИ ===
 load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-FRONTEND_URL = "https://5ka-front.netlify.app"
+FRONTEND_URL = "https://5ka-front.netlify.app/catalog"
 WEBHOOK_URL = "https://fiveka-web-app.onrender.com/telegram"
 PROXY_URL = os.getenv("TOOLIP_PROXY")  
 
