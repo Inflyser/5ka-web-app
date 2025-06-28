@@ -121,6 +121,7 @@ body {
   background: #fff;
   cursor: pointer;
   margin: 0 0 14px 0;
+  text-decoration: none;
 }
 
 .marker-center2 {
@@ -134,9 +135,10 @@ body {
 
 .btn-text {
   /* если нужно прижать текст к маркеру */
+  text-decoration: none;
   margin-right: auto;
   padding-left: 4px;
-  text-decoration: none;
+  
 }
 
 .btn-img {

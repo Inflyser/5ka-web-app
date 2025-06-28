@@ -73,3 +73,9 @@ function renderCategories(rawCategories, searchQuery = '') {
         listElem.appendChild(categoryBlock);
     });
 }
+
+document.addEventListener("DOMContentLoaded", () => {
+    const rawCategories = JSON.parse(localStorage.getItem('categories'));
+    console.log("📦 Категории из localStorage:", rawCategories);
+    renderCategories(rawCategories);
+});
