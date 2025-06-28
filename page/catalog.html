@@ -44,6 +44,7 @@
       document.addEventListener("DOMContentLoaded", () => {
           const rawCategories = JSON.parse(localStorage.getItem('categories'));
           const storeId = localStorage.getItem('userStoreId'); // получаем store_id
+          
           const categoriesList = document.getElementById('categoriesList');
           const productsList = document.getElementById('productsList');
           const backBtn = document.getElementById('backBtn');
