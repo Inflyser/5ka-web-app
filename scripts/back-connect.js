@@ -36,39 +36,25 @@ async function checkDelivery(lat, lon) {
 }
 
 // Основная функция при клике на кнопку "Проверить доставку"
+
 async function handleDeliveryCheck() {
     try {
-        // Получаем координаты из карты
-        const { lat, lng: lon } = map.getCenter();
+        const coords = map.getCenter(); // [lat, lon]
+        const lat = coords[0];
+        const lon = coords[1];
         console.log("📍 Проверка координат:", lat, lon);
-
-        // Сохраняем координаты
-        localStorage.setItem('userCoords', JSON.stringify({ lat, lon }));
-
-        // Отправляем координаты на сервер
         const deliveryResult = await checkDelivery(lat, lon);
-
-        // Отображаем адрес
         const deliveryAddress = deliveryResult.address || "Адрес не определён";
         document.getElementById("address").textContent = "📍 Ваш адрес: " + deliveryAddress;
-
-        if (!window.map || typeof map.getCenter !== 'function') {
-            alert('Карта ещё не загрузилась');
-            return;
-        }
-        // Сохраняем магазин и категории
-        if (deliveryResult.store_id) {
-            localStorage.setItem('store', JSON.stringify({ store_id: deliveryResult.store_id }));
-        }
-
-        if (deliveryResult.categories) {
+        if (deliveryResult && deliveryResult.categories) {
+            // Сохраняем категории в localStorage
             localStorage.setItem('categories', JSON.stringify(deliveryResult.categories));
-            window.location.href = 'catalog.html'; // Переход на страницу выбора категории
+            // Переходим на страницу h5.html
+            window.location.href = 'h5.html';
+            return;
         } else {
             document.getElementById("status").textContent = "❌ Категории не получены";
         }
-
-
     } catch (error) {
         console.error("Ошибка:", error);
         const statusElem = document.getElementById("status");
