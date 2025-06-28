@@ -16,9 +16,7 @@ function searchAddress() {
 }
 
 
-function offsetCoords(coords, offset = 0.0001) {
-    return [coords[0] + offset, coords[1]];
-}
+
 
 ymaps.ready(function () {
     map = new ymaps.Map("map", {
@@ -27,9 +25,7 @@ ymaps.ready(function () {
         controls: ['zoomControl', 'geolocationControl']
     });
 
-    // Изначально метка выше центра
-    const centerCoords = map.getCenter();
-    centerMarker = new ymaps.Placemark(offsetCoords(centerCoords), {}, {
+    centerMarker = new ymaps.Placemark(map.getCenter(), {}, {
         preset: 'islands#redIcon',
         iconColor: '#ff0000'
     });
@@ -37,7 +33,7 @@ ymaps.ready(function () {
 
     map.events.add('boundschange', function () {
         const coords = map.getCenter();
-        centerMarker.geometry.setCoordinates(offsetCoords(coords));
+        centerMarker.geometry.setCoordinates(coords);
 
         ymaps.geocode(coords).then(function (res) {
             const firstGeoObject = res.geoObjects.get(0);
