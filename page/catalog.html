@@ -30,11 +30,11 @@
       <img src="../assets/search.png" alt="">
       <input type="text" id="searchInput" placeholder="       Поиск товаров">
     </div>
-    <!-- <style>
-        ul { list-style-type: none; padding-left: 1em; }
-        li { margin-bottom: 10px; }
-        img { vertical-align: middle; margin-right: 5px; }
-    </style> -->
+
+    <div id="categoriesList"></div>
+    <div id="productsList"></div>
+    <button id="backBtn">← Назад к категориям</button>
+
     <script type="module">
       import { renderCategories } from '../scripts/categories.js';
       import { renderProducts } from '../scripts/product.js';
@@ -91,6 +91,8 @@
     </style>
 
 
+
+
     <div class="bottom-nav">
       <a href="../index.html" class="nav-item">
         <img src="../assets/nav-icon/Component1.png" alt="Главная">
@@ -120,8 +122,7 @@
       });
     </script>
     <button id="backBtn">← Назад к категориям</button>
-    <script src="../scripts/back-connect.js"></script>
-    <script src="../scripts/categories.js"></script>
+
    
    
 </body>
