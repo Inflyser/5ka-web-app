@@ -1,3 +1,5 @@
+import { getProducts } from '../scripts/back-connect.js';
+
 function renderCategories(rawCategories, searchQuery = '') {
     const listElem = document.getElementById('categoriesList');
     listElem.innerHTML = '';
@@ -8,6 +10,7 @@ function renderCategories(rawCategories, searchQuery = '') {
     }
 
     rawCategories.forEach(parent => {
+        // Фильтруем подкатегории по поиску
         const matchedSubs = parent.categories.filter(sub =>
             sub.name.toLowerCase().includes(searchQuery.toLowerCase())
         );
@@ -32,17 +35,50 @@ function renderCategories(rawCategories, searchQuery = '') {
 
             const img = document.createElement('img');
             img.className = 'subcategory-image';
-            img.src = sub.image_link;
+            img.src = sub.image_link || '';
             img.alt = sub.name;
 
             const name = document.createElement('div');
             name.className = 'subcategory-name';
             name.textContent = sub.name;
 
-            // Расположение: сначала картинка, потом текст (как ты просил)
+            // Текст сверху, картинка снизу
             card.appendChild(name);
             card.appendChild(img);
-            
+
+            // Обработчик клика по категории
+            card.addEventListener('click', async () => {
+                const storeObj = JSON.parse(localStorage.getItem('store'));
+                const storeId = storeObj?.store_id;
+                const categoryId = sub.id;
+
+                if (!storeId || !categoryId) {
+                    console.error('store_id или category_id не найдены');
+                    alert('Ошибка: данные магазина или категории отсутствуют.');
+                    return;
+                }
+
+                try {
+                    // Получаем товары с бэкенда
+                    const data = await getProducts(storeId, categoryId);
+
+                    if (!data.products || data.products.length === 0) {
+                        alert('Товары для выбранной категории не найдены.');
+                        return;
+                    }
+
+                    // Сохраняем выбранную категорию и товары для дальнейшего использования
+                    localStorage.setItem('selected_category', JSON.stringify(sub));
+                    localStorage.setItem('products', JSON.stringify(data.products));
+
+                    // Переходим на страницу продуктов
+                    window.location.href = 'products.html';
+
+                } catch (error) {
+                    console.error('Ошибка при запросе товаров:', error);
+                    alert('Не удалось получить товары. Попробуйте позже.');
+                }
+            });
 
             subGrid.appendChild(card);
         });
@@ -58,8 +94,10 @@ document.addEventListener("DOMContentLoaded", () => {
     renderCategories(rawCategories);
 
     const searchInput = document.getElementById('searchInput');
-    searchInput.addEventListener('input', (e) => {
-        const query = e.target.value.trim();
-        renderCategories(rawCategories, query);
-    });
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.trim();
+            renderCategories(rawCategories, query);
+        });
+    }
 });

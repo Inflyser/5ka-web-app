@@ -54,10 +54,13 @@ async function handleDeliveryCheck() {
             localStorage.setItem('categories', JSON.stringify(deliveryResult.categories));
 
             // Переходим на страницу с выбором категории
-            window.location.href = 'h5.html';
+            window.location.href = 'catalog.html';
             return;
         } else {
             document.getElementById("status").textContent = "❌ Категории не получены";
+        }
+        if (deliveryResult.store_id) {
+            localStorage.setItem('store', JSON.stringify({ store_id: deliveryResult.store_id }));
         }
     } catch (error) {
         console.error("Ошибка:", error);
@@ -90,3 +93,19 @@ async function fetchProducts(lat, lon, category_id) {
     return await response.json();
 }
 
+export async function getProducts(store_id, category_id) {
+    const response = await fetch("https://fiveka-web-app.onrender.com/get-products", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ store_id, category_id }),
+    });
+
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || "Ошибка при получении товаров");
+    }
+
+    return await response.json();
+}
