@@ -136,6 +136,7 @@ body {
   /* если нужно прижать текст к маркеру */
   margin-right: auto;
   padding-left: 4px;
+  text-decoration: none;
 }
 
 .btn-img {
