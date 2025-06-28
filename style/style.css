@@ -90,7 +90,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 180px; 
+  gap: 70px; 
 }
 
 .lower {
@@ -106,6 +106,7 @@
   z-index: 500;
 }
 
+
 .promo-button {
   background-color: #eb2316; /* Синий цвет кнопки */
   color: white;
@@ -114,32 +115,46 @@
   font-weight: 500px;
   padding: 16px 160px;
   border: none;
-  border-radius: 15px;
+  border-radius: 25px;
   cursor: pointer;
   transition: background-color 0.3s ease;
 }
 
 input {
-  border: none;
-  position: relative;
-  padding-bottom: 4px 0; /* чтобы линия не налезала на текст */
-  outline: none;  
-  background: transparent;
-  border-bottom: 0.5px solid rgb(221, 221, 221);
+  display: inline-block;
+  padding: 12px 50px;
+  border: 2px solid #ececec; /* салатовый цвет */
+  border-radius: 10px;        /* скругление углов */
+  background: #ececec;           /* по желанию — белый фон */
 }
 
 
-input::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 50%;             /* центрируем линию */
-  transform: translateX(-50%);
-  width: 60px;           /* длина линии */
-  height: 1px;           /* толщина линии */
-  background-color: gray; /* цвет линии */
-}
 
 input:focus {
   border-bottom-color: #666; /* чуть темнее при фокусе */
+}
+
+
+.delivery-title {
+  display: inline-block;
+  padding: 12px 60px;
+  border: 2px solid #4f9e00; /* салатовый цвет */
+  border-radius: 16px;        /* скругление углов */
+  background: #fff;           /* по желанию — белый фон */
+}
+
+.delivery-title2 {
+  display: inline-block;
+  padding: 12px 60px;
+  border: 2px solid #adadad; /* салатовый цвет */
+  border-radius: 16px;        /* скругление углов */
+  background: #fff;           /* по желанию — белый фон */
+}
+
+.center-line {
+  width: 25px;
+  height: 2.8px;           /* Толщина линии, можно изменить */
+  background: #a5a5a5;       /* Цвет линии */
+  margin: 2% 0 0 50%;   
+  border-radius: 30px;      /* Центрирование по горизонтали */
 }

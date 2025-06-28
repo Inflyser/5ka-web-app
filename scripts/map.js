@@ -8,7 +8,7 @@ function searchAddress() {
             const coords = firstGeoObject.geometry.getCoordinates();
             map.setCenter(coords);
             centerMarker.geometry.setCoordinates(coords);
-            document.getElementById('address').innerText = 'Адрес: ' + firstGeoObject.getAddressLine();
+            document.getElementById('address').innerText = 'Адрес доставки';
         } else {
             alert("Адрес не найден");
         }
@@ -37,10 +37,15 @@ ymaps.ready(function () {
 
         ymaps.geocode(coords).then(function (res) {
             const firstGeoObject = res.geoObjects.get(0);
-            const address = firstGeoObject ? firstGeoObject.getAddressLine() : 'не найден';
-            document.getElementById('address').innerText = 'Адрес: ' + address;
+            const address = firstGeoObject ? firstGeoObject.getAddressLine() : 'Мы вас не нашли';
+            document.getElementById('address').innerText = 'Адрес доставки';
             document.getElementById('address-input').value = address;
         });
     });
 });
 
+document.getElementById('address-input').addEventListener('keydown', function(event) {
+  if (event.key === 'Enter') {
+    searchAddress();
+  }
+});
