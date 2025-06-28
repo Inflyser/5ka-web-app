@@ -127,8 +127,9 @@ async def check_delivery(loc: Location):
                 )
                 print(f"Categories list output: {catalog!s:.100s}...\n")
                 
+                flattened = categories.flatten_categories(catalog)
                 categories.flat_categories.clear()
-                catalog = categories.flat_categories.extend(categories.flatten_categories(catalog))
+                categories.flat_categories.extend(flattened)
                 print(catalog)
                 return {
                     "status": "ok",
