@@ -52,6 +52,10 @@ async function handleDeliveryCheck() {
         const deliveryAddress = deliveryResult.address || "Адрес не определён";
         document.getElementById("address").textContent = "📍 Ваш адрес: " + deliveryAddress;
 
+        if (!window.map || typeof map.getCenter !== 'function') {
+            alert('Карта ещё не загрузилась');
+            return;
+        }
         // Сохраняем магазин и категории
         if (deliveryResult.store_id) {
             localStorage.setItem('store', JSON.stringify({ store_id: deliveryResult.store_id }));
@@ -63,6 +67,8 @@ async function handleDeliveryCheck() {
         } else {
             document.getElementById("status").textContent = "❌ Категории не получены";
         }
+
+
     } catch (error) {
         console.error("Ошибка:", error);
         const statusElem = document.getElementById("status");

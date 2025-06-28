@@ -43,3 +43,5 @@ ymaps.ready(function () {
         });
     });
 });
+
+window.map = map;
