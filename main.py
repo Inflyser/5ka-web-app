@@ -99,13 +99,17 @@ async def ping():
 class Location(BaseModel):
     lat: float
     lon: float
-    category_id: Optional[str] = None
+
+# Схема для второго запроса
+class ProductQuery(BaseModel):
+    store_id: str
+    category_id: str
 
 api_router = APIRouter()
 
-@api_router.post("/check-delivery")
-async def check_delivery(loc: Location):
-    logger.info(f"Проверка доставки для координат: lat={loc.lat}, lon={loc.lon}")
+@api_router.post("/get-store-and-categories")
+async def get_store_and_categories(loc: Location):
+    logger.info(f"Поиск магазина и категорий по координатам: lat={loc.lat}, lon={loc.lon}")
     try:
         async with Pyaterochka(
             proxy=PROXY_URL,
@@ -114,40 +118,51 @@ async def check_delivery(loc: Location):
             trust_env=False
         ) as API:
             store = await API.find_store(longitude=loc.lon, latitude=loc.lat)
-            if store:
-                logger.info("Магазин найден")
+            if not store:
+                raise HTTPException(status_code=404, detail="Магазин не найден")
 
-                catalog = await API.categories_list(
-                    subcategories=True,
-                    mode=PurchaseMode.DELIVERY
-                )
-                print(f"Categories list output: {catalog!s:.100s}...\n")
+            catalog = await API.categories_list(
+                subcategories=True,
+                mode=PurchaseMode.DELIVERY
+            )
 
-                # Определяем category_id: либо из запроса, либо первую из списка
-                category_id = loc.category_id or (catalog[0]['id'] if catalog else None)
-
-                products = []
-                if category_id:
-                    products = await API.products_list(category_id, limit=100)
-                    print(f"Items list output: {products!s:.100s}...\n")
-                else:
-                    logger.warning("Категория не указана и список категорий пуст")
-
-                return {
-                    "status": "ok",
-                    "store": store,
-                    "categories": catalog,
-                    "products": products
-                }
-
-            else:
-                logger.warning("Нет доступных магазинов")
-                raise HTTPException(status_code=404, detail="Магазин не найден по координатам")
+            return {
+                "status": "ok",
+                "store": store,
+                "store_id": store["id"],  # если в объекте store есть поле id
+                "categories": catalog
+            }
 
     except Exception as e:
-        logger.exception("Ошибка при получении магазина через Pyaterochka API")
+        logger.exception("Ошибка при получении магазина")
         raise HTTPException(status_code=500, detail=str(e))
-    
+
+
+@api_router.post("/get-products")
+async def get_products(data: ProductQuery):
+    logger.info(f"Получение товаров по store_id={data.store_id}, category_id={data.category_id}")
+    try:
+        async with Pyaterochka(
+            proxy=PROXY_URL,
+            debug=True,
+            autoclose_browser=False,
+            trust_env=False
+        ) as API:
+            # Возможно, потребуется явно выбрать магазин (если библиотека это поддерживает)
+            # Если нет — просто вызываем products_list
+            products = await API.products_list(
+                category_id=data.category_id,
+                limit=100
+            )
+
+            return {
+                "status": "ok",
+                "products": products
+            }
+
+    except Exception as e:
+        logger.exception("Ошибка при получении товаров")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/telegram")
 async def telegram_webhook(update: dict):
