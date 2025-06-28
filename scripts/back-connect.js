@@ -25,6 +25,7 @@ async function handleDeliveryCheck() {
 
         const deliveryResult = await checkDelivery(lat, lon);
         const deliveryAddress = deliveryResult.address || "Адрес не определён";
+        localStorage.setItem('userAddress', deliveryAddress); // вот это добавь
         document.getElementById("address").textContent = "📍 Ваш адрес: " + deliveryAddress;
 
         if (deliveryResult && deliveryResult.categories) {
