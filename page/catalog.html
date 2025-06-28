@@ -63,7 +63,7 @@
               }
 
               try {
-                  const productsData = await fetchProducts(coords.lat, coords.lon, categoryId);
+                  const productsData = await getProducts(coords.lat, coords.lon, categoryId);
                   renderProducts(productsData.products);
               } catch (err) {
                   console.error(err);
