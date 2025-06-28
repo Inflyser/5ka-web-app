@@ -53,7 +53,7 @@ def webapp_builder() -> InlineKeyboardBuilder:
     builder = InlineKeyboardBuilder()
     builder.button(
         text="Click",
-        web_app=WebAppInfo(url=f"{FRONTEND_URL}/index.html")
+        web_app=WebAppInfo(url=f"{FRONTEND_URL}/page/catalog.html")
     )
     return builder.as_markup()
 
