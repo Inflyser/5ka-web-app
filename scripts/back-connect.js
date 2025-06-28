@@ -1,25 +1,3 @@
-
-// Получить координаты пользователя
-async function getUserLocation() {
-    return new Promise((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                resolve({
-                    lat: position.coords.latitude,
-                    lon: position.coords.longitude
-                });
-            },
-            (err) => {
-                console.error("Геолокация не работает", err);
-                alert("Геолокация недоступна");
-                reject(err);
-            }
-        );
-    });
-}
-
-
-
 async function checkDelivery(lat, lon) {
     const response = await fetch("https://fiveka-web-app.onrender.com/get-store-and-categories", {
         method: "POST",
