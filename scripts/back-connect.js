@@ -32,7 +32,7 @@ async function handleDeliveryCheck() {
             localStorage.setItem('categories', JSON.stringify(deliveryResult.categories));
 
             // Переходим на страницу с выбором категории
-            window.location.href = 'h5.html';
+            window.location.href = 'catalog.html';
             return;
         } else {
             document.getElementById("status").textContent = "❌ Категории не получены";
