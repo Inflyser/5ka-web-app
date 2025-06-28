@@ -54,13 +54,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 console.log("✅ Скрипт back-connect.js загружен");
 
-const checkDeliveryBtn = document.getElementById("checkDeliveryBtn");
-if (checkDeliveryBtn) {
-    console.log("✅ Кнопка найдена");
-    checkDeliveryBtn.addEventListener("click", handleDeliveryCheck);
-} else {
-    console.error("❌ Кнопка checkDeliveryBtn не найдена");
-}
+
 
 
 

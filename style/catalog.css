@@ -7,19 +7,43 @@ body {
 }
 
 .search-container {
-    padding: 0 8px;
+    position: relative;
+    width: 100%;
     margin-bottom: 16px;
+    padding: 8px;
+}
+
+.search-container img {
+    position: absolute;
+    left: 20px; /* смещение от левого края контейнера */
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
+    pointer-events: none; /* чтобы клик проходил сквозь картинку */
 }
 
 #searchInput {
     width: 100%;
-    padding: 10px 14px;
+    padding: 10px 14px 10px 44px; /* увеличиваем левый паддинг */
     font-size: 14px;
     border-radius: 12px;
     border: 1px solid #ccc;
     outline: none;
     box-shadow: 0 2px 6px rgba(0,0,0,0.05);
 }
+
+/* Скрываем иконку при фокусе input */
+.search-container:focus-within img {
+    opacity: 0;
+    pointer-events: none;
+}
+
+#searchInput:focus::placeholder { opacity: 0; transition: opacity 0.3s; }
+#searchInput:focus::-webkit-input-placeholder { opacity: 0; transition: opacity 0.3s; }
+#searchInput:focus::-moz-placeholder { opacity: 0; transition: opacity 0.3s; }
+#searchInput:focus:-moz-placeholder { opacity: 0; transition: opacity 0.3s; }
+#searchInput:focus:-ms-input-placeholder { opacity: 0; transition: opacity 0.3s; }
 
 .category-block {
     margin-bottom: 2rem;
@@ -84,4 +108,39 @@ body {
     border: 1px solid #ccc;
     outline: none;
     box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+.my-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%; /* или нужная ширина */
+  padding: 0 16px;
+  height: 48px;
+  border: none;
+  background: #fff;
+  cursor: pointer;
+  margin: 0 0 14px 0;
+}
+
+.marker-center2 {
+  width: 24px;
+  height: 24px;
+  background: url('https://img.icons8.com/ios-filled/50/marker.png') no-repeat center;
+  background-size: contain;
+  margin-right: 8px;
+  pointer-events: none;
+}
+
+.btn-text {
+  /* если нужно прижать текст к маркеру */
+  margin-right: auto;
+  padding-left: 4px;
+}
+
+.btn-img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  margin-left: 8px;
 }
