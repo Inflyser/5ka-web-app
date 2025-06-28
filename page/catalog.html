@@ -44,24 +44,18 @@
       document.addEventListener("DOMContentLoaded", () => {
           const rawCategories = JSON.parse(localStorage.getItem('categories'));
           const storeId = localStorage.getItem('userStoreId'); // получаем store_id
-
           const categoriesList = document.getElementById('categoriesList');
           const productsList = document.getElementById('productsList');
           const backBtn = document.getElementById('backBtn');
-
           renderCategories(rawCategories, '', async (categoryId) => {
-        // Скрываем категории, показываем "назад" и товары
               categoriesList.style.display = 'none';
               productsList.style.display = 'block';
               backBtn.style.display = 'block';
-
               productsList.innerHTML = 'Загрузка товаров...';
-
               if (!storeId) {
-                productsList.innerHTML = 'Ошибка: store_id не найден';
-                return;
+                  productsList.innerHTML = 'Ошибка: store_id не найден';
+                  return;
               }
-
               try {
                   const productsData = await getProducts(storeId, categoryId);
                   renderProducts(productsData.products);
@@ -70,8 +64,6 @@
                   productsList.innerHTML = 'Ошибка при загрузке товаров.';
               }
           });
-
-          // Назад к категориям
           backBtn.addEventListener('click', () => {
               productsList.innerHTML = '';
               categoriesList.style.display = 'block';
