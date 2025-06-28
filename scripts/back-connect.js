@@ -25,18 +25,21 @@ async function handleDeliveryCheck() {
 
         const deliveryResult = await checkDelivery(lat, lon);
         const deliveryAddress = deliveryResult.address || "Адрес не определён";
-        localStorage.setItem('userAddress', deliveryAddress); // вот это добавь
+        localStorage.setItem('userAddress', deliveryAddress);
         document.getElementById("address").textContent = "📍 Ваш адрес: " + deliveryAddress;
 
-        if (deliveryResult && deliveryResult.categories) {
+        if (deliveryResult && deliveryResult.categories && deliveryResult.store) {
             // Сохраняем категории
             localStorage.setItem('categories', JSON.stringify(deliveryResult.categories));
+
+            // Сохраняем store_id для дальнейших запросов
+            localStorage.setItem('storeId', deliveryResult.store.id || deliveryResult.store.store_id || deliveryResult.store.code);
 
             // Переходим на страницу с выбором категории
             window.location.href = 'catalog.html';
             return;
         } else {
-            document.getElementById("status").textContent = "❌ Категории не получены";
+            document.getElementById("status").textContent = "❌ Категории или магазин не получены";
         }
     } catch (error) {
         console.error("Ошибка:", error);
