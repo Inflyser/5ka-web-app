@@ -1,5 +1,3 @@
-import { getProducts } from './back-connect.js';
-
 function renderCategories(rawCategories, searchQuery = '') {
     const listElem = document.getElementById('categoriesList');
     listElem.innerHTML = '';
@@ -10,7 +8,6 @@ function renderCategories(rawCategories, searchQuery = '') {
     }
 
     rawCategories.forEach(parent => {
-        // Фильтруем подкатегории по поиску
         const matchedSubs = parent.categories.filter(sub =>
             sub.name.toLowerCase().includes(searchQuery.toLowerCase())
         );
@@ -35,48 +32,36 @@ function renderCategories(rawCategories, searchQuery = '') {
 
             const img = document.createElement('img');
             img.className = 'subcategory-image';
-            img.src = sub.image_link || '';
+            img.src = sub.image_link;
             img.alt = sub.name;
 
             const name = document.createElement('div');
             name.className = 'subcategory-name';
             name.textContent = sub.name;
 
-            // Текст сверху, картинка снизу
             card.appendChild(name);
             card.appendChild(img);
 
-            // Обработчик клика по категории
+            // Добавляем обработчик клика для запроса товаров этой категории
             card.addEventListener('click', async () => {
-                const storeObj = JSON.parse(localStorage.getItem('store'));
-                const storeId = storeObj?.store_id;
-                const categoryId = sub.id;
-
-                if (!storeId || !categoryId) {
-                    console.error('store_id или category_id не найдены');
-                    alert('Ошибка: данные магазина или категории отсутствуют.');
-                    return;
-                }
-
                 try {
-                    // Получаем товары с бэкенда
-                    const data = await getProducts(storeId, categoryId);
+                    // Отображаем индикатор загрузки, очистка списка товаров
+                    const productsListElem = document.getElementById('productsList');
+                    productsListElem.innerHTML = 'Загрузка товаров...';
 
-                    if (!data.products || data.products.length === 0) {
-                        alert('Товары для выбранной категории не найдены.');
+                    // Получаем координаты из localStorage или другого источника (например, заранее сохранённые)
+                    const coords = JSON.parse(localStorage.getItem('userCoords'));
+                    if (!coords) {
+                        productsListElem.innerHTML = 'Ошибка: координаты пользователя не найдены.';
                         return;
                     }
 
-                    // Сохраняем выбранную категорию и товары для дальнейшего использования
-                    localStorage.setItem('selected_category', JSON.stringify(sub));
-                    localStorage.setItem('products', JSON.stringify(data.products));
-
-                    // Переходим на страницу продуктов
-                    window.location.href = 'products.html';
-
-                } catch (error) {
-                    console.error('Ошибка при запросе товаров:', error);
-                    alert('Не удалось получить товары. Попробуйте позже.');
+                    // Запрос на бек с координатами + category_id
+                    const productsData = await fetchProducts(coords.lat, coords.lon, sub.id);
+                    renderProducts(productsData.products);
+                } catch (err) {
+                    console.error(err);
+                    document.getElementById('productsList').innerHTML = 'Ошибка при загрузке товаров.';
                 }
             });
 
@@ -88,16 +73,3 @@ function renderCategories(rawCategories, searchQuery = '') {
         listElem.appendChild(categoryBlock);
     });
 }
-
-document.addEventListener("DOMContentLoaded", () => {
-    const rawCategories = JSON.parse(localStorage.getItem('categories')) || [];
-    renderCategories(rawCategories);
-
-    const searchInput = document.getElementById('searchInput');
-    if (searchInput) {
-        searchInput.addEventListener('input', (e) => {
-            const query = e.target.value.trim();
-            renderCategories(rawCategories, query);
-        });
-    }
-});
