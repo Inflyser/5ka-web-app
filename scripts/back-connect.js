@@ -33,7 +33,7 @@ async function handleDeliveryCheck() {
             localStorage.setItem('categories', JSON.stringify(deliveryResult.categories));
 
             // Сохраняем store_id для дальнейших запросов
-            localStorage.setItem('storeId', deliveryResult.store.id || deliveryResult.store.store_id || deliveryResult.store.code);
+            localStorage.setItem('storeId', deliveryResult.store.sap_code);
            
 
             // Переходим на страницу с выбором категории
