@@ -17,6 +17,7 @@ from dotenv import load_dotenv
 
 
 from router import categories
+from router import products
 
 from aiogram import Bot, Dispatcher, Router
 from aiogram.client.default import DefaultBotProperties
@@ -151,19 +152,23 @@ async def check_delivery(loc: Location):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
 
 @api_router.post("/get-products")
 async def get_products(data: ProductQuery):
     try:
-        products = await pyaterochka_session.products_list(
+        raw_products  = await pyaterochka_session.products_list(
             category_id=data.category_id,
             limit=100,
             mode=PurchaseMode.DELIVERY,
             sap_code_store_id=data.store_id
         )
-        return {"status": "ok", "products": products}
+        processed_data = products.process_products(raw_products)
+        
+        return {"status": "ok", "products": processed_data}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.post("/telegram")
 async def telegram_webhook(update: dict):
