@@ -159,7 +159,6 @@ input:focus {
   border-radius: 30px;      /* Центрирование по горизонтали */
 }
 
-/* 
 .products-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
@@ -245,4 +244,4 @@ input:focus {
     border-radius: 8px;
     font-size: 11px;
     font-weight: bold;
-} */
+} 
