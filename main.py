@@ -126,7 +126,7 @@ async def check_delivery(loc: Location):
         async with Pyaterochka(
             proxy=get_toolip_proxy(),
             debug=True,
-            autoclose_browser=True,
+            autoclose_browser=False,
             trust_env=False
         ) as API:
             store = await API.find_store(longitude=loc.lon, latitude=loc.lat)
@@ -167,17 +167,17 @@ async def get_products(data: ProductQuery):
         async with Pyaterochka(
             proxy=get_toolip_proxy(),
             debug=True,
-            autoclose_browser=True,
+            autoclose_browser=False,
             trust_env=False
         ) as API:
             # Возможно, потребуется явно выбрать магазин (если библиотека это поддерживает)
             # Если нет — просто вызываем products_list
+      
+          
             products = await API.products_list(
                 category_id=data.category_id,
-                limit=100,
-                mode=PurchaseMode.DELIVERY,
-                sap_code_store_id=data.store_id
-                
+                sap_code_store_id=data.store_id,
+                limit=100
             )
             
             print(products)
