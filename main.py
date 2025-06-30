@@ -26,12 +26,23 @@ from aiogram.types import Message, WebAppInfo, Update
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.exceptions import TelegramForbiddenError
 
+import random
+import string
+
 # === НАСТРОЙКИ ===
+
+def generate_random_session_id(length: int = 8) -> str:
+    return ''.join(random.choices(string.ascii_lowercase + string.digits, k=length))
+
+def get_toolip_proxy() -> str:
+    password = os.getenv("TOOLIP_PROXY")  
+    session = generate_random_session_id()
+    return f"http://tl-28586cb1ec8934abdcbf0e23118f0607dd36f3b474f993049effafbd9c11e2d7-country-ru-session-{session}:{password}@proxy.toolip.io:31112"
+
 load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 FRONTEND_URL = "https://5ka-front.netlify.app"
 WEBHOOK_URL = "https://fiveka-web-app.onrender.com/telegram"
-PROXY_URL = os.getenv("TOOLIP_PROXY")  
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -113,7 +124,7 @@ async def check_delivery(loc: Location):
     logger.info(f"Проверка доставки для координат: lat={loc.lat}, lon={loc.lon}")
     try:
         async with Pyaterochka(
-            proxy=PROXY_URL,
+            proxy=get_toolip_proxy(),
             debug=True,
             autoclose_browser=False,
             trust_env=False
@@ -154,7 +165,7 @@ async def get_products(data: ProductQuery):
     logger.info(f"Получение товаров по store_id={data.store_id}, category_id={data.category_id}")
     try:
         async with Pyaterochka(
-            proxy=PROXY_URL,
+            proxy=get_toolip_proxy(),
             debug=True,
             autoclose_browser=False,
             trust_env=False
