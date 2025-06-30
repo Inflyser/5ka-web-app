@@ -87,10 +87,23 @@ bot = Bot(
 dp = Dispatcher()
 dp.include_router(tg_router)
 
+pyaterochka_session = None
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await bot.set_webhook(WEBHOOK_URL)
+    # Инициализация при старте приложения
+    global pyaterochka_session
+    pyaterochka_session = Pyaterochka(
+        proxy=get_toolip_proxy(),
+        debug=True,
+        autoclose_browser=False,
+        trust_env=False
+    )
+    await pyaterochka_session.__aenter__()
     yield
+    # Очистка при завершении
+    if pyaterochka_session:
+        await pyaterochka_session.__aexit__(None, None, None)
 
 # === FASTAPI ===
 app = FastAPI(lifespan=lifespan)
@@ -121,75 +134,35 @@ api_router = APIRouter()
 
 @api_router.post("/get-store-and-categories")
 async def check_delivery(loc: Location):
-    logger.info(f"Проверка доставки для координат: lat={loc.lat}, lon={loc.lon}")
     try:
-        async with Pyaterochka(
-            proxy=get_toolip_proxy(),
-            debug=True,
-            autoclose_browser=False,
-            trust_env=False
-        ) as API:
-            store = await API.find_store(longitude=loc.lon, latitude=loc.lat)
-            if store:
-                logger.info("Магазин найден")
-
-                catalog = await API.categories_list(
-                    subcategories=True,
-                    mode=PurchaseMode.DELIVERY
-                )
-                print(f"Categories list output: {catalog!s:.100s}...\n")
-                
-                flattened = categories.flatten_categories(catalog)
-                categories.flat_categories.clear()
-                categories.flat_categories.extend(flattened)
-                print(catalog)
-                return {
-                    "status": "ok",
-                    "store": store,
-                    "categories": catalog  # Можно также вернуть список категорий
-                }
-                
-            else:
-                logger.warning("Нет доступных магазинов")
-                raise HTTPException(status_code=404, detail="Магазин не найден по координатам")
-
+        store = await pyaterochka_session.find_store(longitude=loc.lon, latitude=loc.lat)
+        if not store:
+            raise HTTPException(status_code=404, detail="Магазин не найден")
+            
+        catalog = await pyaterochka_session.categories_list(
+            subcategories=True,
+            mode=PurchaseMode.DELIVERY
+        )
+        
+        return {
+            "status": "ok",
+            "store": store,
+            "categories": catalog
+        }
     except Exception as e:
-        logger.exception("Ошибка при получении магазина через Pyaterochka API")
         raise HTTPException(status_code=500, detail=str(e))
-    
-
-
 
 @api_router.post("/get-products")
 async def get_products(data: ProductQuery):
-    logger.info(f"Получение товаров по store_id={data.store_id}, category_id={data.category_id}")
     try:
-        async with Pyaterochka(
-            proxy=get_toolip_proxy(),
-            debug=True,
-            autoclose_browser=False,
-            trust_env=False
-        ) as API:
-            # Возможно, потребуется явно выбрать магазин (если библиотека это поддерживает)
-            # Если нет — просто вызываем products_list
-      
-          
-            products = await API.products_list(
-                category_id=data.category_id,
-                sap_code_store_id=data.store_id,
-                limit=100
-            )
-            
-            print(products)
-            
-            return {
-                "status": "ok",
-                "products": products
-            }
-            
-
+        products = await pyaterochka_session.products_list(
+            category_id=data.category_id,
+            limit=100,
+            mode=PurchaseMode.DELIVERY,
+            sap_code_store_id=data.store_id
+        )
+        return {"status": "ok", "products": products}
     except Exception as e:
-        logger.exception("Ошибка при получении товаров")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/telegram")
