@@ -174,7 +174,10 @@ async def get_products(data: ProductQuery):
             # Если нет — просто вызываем products_list
             products = await API.products_list(
                 category_id=data.category_id,
-                limit=100
+                limit=100,
+                mode=PurchaseMode.DELIVERY,
+                sap_code_store_id=data.store_id
+                
             )
             
             print(products)
