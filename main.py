@@ -144,7 +144,9 @@ async def check_delivery(loc: Location):
             subcategories=True,
             mode=PurchaseMode.DELIVERY
         )
-        
+        flattened = categories.flatten_categories(catalog)
+        categories.flat_categories.clear()
+        categories.flat_categories.extend(flattened)
         return {
             "status": "ok",
             "store": store,
