@@ -173,15 +173,17 @@ async def get_products(data: ProductQuery):
             # Возможно, потребуется явно выбрать магазин (если библиотека это поддерживает)
             # Если нет — просто вызываем products_list
             products = await API.products_list(
-                store_id=data.store_id,
                 category_id=data.category_id,
                 limit=100
             )
-
+            
+            print(products)
+            
             return {
                 "status": "ok",
                 "products": products
             }
+            
 
     except Exception as e:
         logger.exception("Ошибка при получении товаров")
