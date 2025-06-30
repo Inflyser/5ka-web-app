@@ -30,6 +30,7 @@ import random
 import string
 
 # === НАСТРОЙКИ ===
+load_dotenv()
 
 def generate_random_session_id(length: int = 8) -> str:
     return ''.join(random.choices(string.ascii_lowercase + string.digits, k=length))
@@ -39,7 +40,6 @@ def get_toolip_proxy() -> str:
     session = generate_random_session_id()
     return f"http://tl-28586cb1ec8934abdcbf0e23118f0607dd36f3b474f993049effafbd9c11e2d7-country-ru-session-{session}:{password}@proxy.toolip.io:31112"
 
-load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 FRONTEND_URL = "https://5ka-front.netlify.app"
 WEBHOOK_URL = "https://fiveka-web-app.onrender.com/telegram"
