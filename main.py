@@ -92,7 +92,7 @@ pyaterochka_session = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Инициализация при старте приложения
+
     global pyaterochka_session
     pyaterochka_session = Pyaterochka(
         proxy=get_toolip_proxy(),
@@ -101,10 +101,8 @@ async def lifespan(app: FastAPI):
         trust_env=False
     )
     await pyaterochka_session.__aenter__()
-    yield
-    # Очистка при завершении
-    if pyaterochka_session:
-        await pyaterochka_session.__aexit__(None, None, None)
+    
+    yield  
 
 # === FASTAPI ===
 app = FastAPI(lifespan=lifespan)

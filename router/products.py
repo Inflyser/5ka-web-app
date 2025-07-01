@@ -28,8 +28,8 @@ def process_products(raw_products: dict) -> dict:
     # Сортируем по наличию скидки и рейтингу
     processed_products.sort(
         key=lambda x: (
-            -x["is_discount"],  # Со скидкой вначале
-            -x["rating"]        # Затем по рейтингу (высокий сначала)
+            -x["is_discount"],  
+            -x["rating"]       
         )
     )
     
