@@ -35,55 +35,6 @@
     <div id="productsList"></div>
     <button id="backBtn">← Назад к категориям</button>
 
-    <script type="module">
-      import { renderCategories } from '../scripts/categories.js';
-      import { renderProducts } from '../scripts/product.js';
-      import { getProducts } from '../scripts/api.js';
-
-        
-      document.addEventListener("DOMContentLoaded", () => {
-          const rawCategories = JSON.parse(localStorage.getItem('categories'));
-          const storeId = localStorage.getItem('storeId'); // получаем store_id
-          
-          const categoriesList = document.getElementById('categoriesList');
-          const productsList = document.getElementById('productsList');
-          const backBtn = document.getElementById('backBtn');
-          renderCategories(rawCategories, '', async (categoryId) => {
-              categoriesList.style.display = 'none';
-              productsList.style.display = 'block';
-              backBtn.style.display = 'block';
-              productsList.innerHTML = 'Загрузка товаров...';
-              if (!storeId) {
-                  productsList.innerHTML = 'Ошибка: store_id не найден';
-                  return;
-              }
-              try {
-                  const productsData = await getProducts(storeId, categoryId);
-                  renderProducts(productsData.products);
-              } catch (err) {
-                  console.error(err);
-                  productsList.innerHTML = 'Ошибка при загрузке товаров.';
-              }
-          });
-          backBtn.addEventListener('click', () => {
-              productsList.innerHTML = '';
-              categoriesList.style.display = 'block';
-              productsList.style.display = 'none';
-              backBtn.style.display = 'none';
-          });
-      });
-    </script>
-    <style>
-        #productsList {
-            display: none;
-        }
-        #backBtn {
-            display: none;
-            margin-bottom: 1rem;
-        }
-    </style>
-
-
 
 
     <div class="bottom-nav">
@@ -105,18 +56,13 @@
       </a>
     </div>
 
-    <script>
-      document.addEventListener("DOMContentLoaded", () => {
-        const addressElem = document.getElementById('address');
-        const address = localStorage.getItem('userAddress');
-        if (address && addressElem) {
-          addressElem.textContent = "📍 " + address;
-        }
-      });
-    </script>
-    <button id="backBtn">← Назад к категориям</button>
 
-   
+
+    <button id="backBtn">← Назад к категориям</button>
+    <script type="module">
+      import { initCatalog } from '../scripts/catalog.js';
+      document.addEventListener("DOMContentLoaded", initCatalog);
+    </script>
    
 </body>
 </html>
