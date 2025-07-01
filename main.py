@@ -89,28 +89,20 @@ dp = Dispatcher()
 dp.include_router(tg_router)
 
 pyaterochka_session = None
-session_lock = asyncio.Lock()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global pyaterochka_session
-    
-    async def create_session():
-        return await Pyaterochka(
-            proxy=get_toolip_proxy(),
-            debug=True,
-            autoclose_browser=False,
-            trust_env=False
-        ).__aenter__()
 
-    # Инициализируем сессию при старте
-    pyaterochka_session = await create_session()
+    global pyaterochka_session
+    pyaterochka_session = Pyaterochka(
+        proxy=get_toolip_proxy(),
+        debug=True,
+        autoclose_browser=False,
+        trust_env=False
+    )
+    await pyaterochka_session.__aenter__()
     
-    yield
-    
-    # Закрываем сессию при завершении
-    if pyaterochka_session:
-        await pyaterochka_session.__aexit__(None, None, None)
+    yield  
 
 # === FASTAPI ===
 app = FastAPI(lifespan=lifespan)
@@ -139,45 +131,14 @@ class ProductQuery(BaseModel):
 
 api_router = APIRouter()
 
-async def get_pyaterochka_session():
-    global pyaterochka_session
-    async with session_lock:
-        if pyaterochka_session is None:
-            pyaterochka_session = await Pyaterochka(
-                proxy=get_toolip_proxy(),
-                debug=True,
-                autoclose_browser=False,
-                trust_env=False
-            ).__aenter__()
-        
-        # Проверяем валидность сессии
-        try:
-            # Простая проверка - попробуем сделать тестовый запрос
-            await pyaterochka_session.find_store(longitude=37.6176, latitude=55.7558)
-            return pyaterochka_session
-        except Exception as e:
-            logger.warning(f"Сессия невалидна, пересоздаем: {str(e)}")
-            try:
-                await pyaterochka_session.__aexit__(None, None, None)
-            except:
-                pass
-            pyaterochka_session = await Pyaterochka(
-                proxy=get_toolip_proxy(),
-                debug=True,
-                autoclose_browser=False,
-                trust_env=False
-            ).__aenter__()
-            return pyaterochka_session
-
 @api_router.post("/get-store-and-categories")
 async def check_delivery(loc: Location):
     try:
-        session = await get_pyaterochka_session()
-        store = await session.find_store(longitude=loc.lon, latitude=loc.lat)
+        store = await pyaterochka_session.find_store(longitude=loc.lon, latitude=loc.lat)
         if not store:
             raise HTTPException(status_code=404, detail="Магазин не найден")
             
-        catalog = await session.categories_list(
+        catalog = await pyaterochka_session.categories_list(
             subcategories=True,
             mode=PurchaseMode.DELIVERY
         )
@@ -190,24 +151,24 @@ async def check_delivery(loc: Location):
             "categories": catalog
         }
     except Exception as e:
-        logger.error(f"Ошибка в check_delivery: {str(e)}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail=str(e))
+    
 
 @api_router.post("/get-products")
 async def get_products(data: ProductQuery):
     try:
-        session = await get_pyaterochka_session()
-        raw_products = await session.products_list(
+        raw_products  = await pyaterochka_session.products_list(
             category_id=data.category_id,
             limit=100,
             mode=PurchaseMode.DELIVERY,
             sap_code_store_id=data.store_id
         )
         processed_data = products.process_products(raw_products)
+        
         return {"status": "ok", "products": processed_data}
     except Exception as e:
-        logger.error(f"Ошибка в get_products: {str(e)}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.post("/telegram")
 async def telegram_webhook(update: dict):
