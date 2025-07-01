@@ -31,7 +31,6 @@ async def fetch_pyaterochka_stores(lat: float, lon: float):
             return None
 
 async def main():
-    # Координаты для примера (можно заменить на любые другие)
     latitude = 52.95417364044243
     longitude = 36.09554340003643
     
