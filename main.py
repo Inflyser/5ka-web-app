@@ -3,14 +3,22 @@ import aiohttp
 import asyncio
 import logging
 import os
-from curl_cffi.requests import AsyncSession
+
+from pyaterochka_api import Pyaterochka
+from pyaterochka_api import PurchaseMode
 from typing import Optional
+
 from fastapi import FastAPI, APIRouter, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 from pydantic import BaseModel
 from dotenv import load_dotenv
+
+
+from router import categories
+from router import products
+
 from aiogram import Bot, Dispatcher, Router
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
@@ -18,6 +26,7 @@ from aiogram.filters import CommandStart
 from aiogram.types import Message, WebAppInfo, Update
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.exceptions import TelegramForbiddenError
+
 import random
 import string
 
@@ -39,7 +48,7 @@ WEBHOOK_URL = "https://fiveka-web-app.onrender.com/telegram"
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# === SSL PATCH ===
+# === SSL PATCH ДЛЯ PYATEROCHKA ===
 ssl_context = ssl.create_default_context()
 ssl_context.check_hostname = False
 ssl_context.verify_mode = ssl.CERT_NONE
@@ -75,80 +84,27 @@ async def start(message: Message):
 bot = Bot(
     BOT_TOKEN,
     default=DefaultBotProperties(parse_mode=ParseMode.HTML)
-    )
+)
 dp = Dispatcher()
 dp.include_router(tg_router)
 
-# === API клиент для Пятерочки ===
-class PyaterochkaAPIClient:
-    def __init__(self):
-        self.session = None
-        self.headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "Accept": "application/json, text/plain, */*",
-            "Accept-Language": "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
-            "Referer": "https://5ka.ru/",
-            "Origin": "https://5ka.ru",
-        }
-
-    async def __aenter__(self):
-        self.session = AsyncSession(
-            impersonate="chrome120",
-            proxies={"http": get_toolip_proxy(), "https": get_toolip_proxy()},
-            verify=False
-        )
-        return self
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        if self.session:
-            await self.session.close()
-
-    async def find_store(self, latitude: float, longitude: float):
-        url = "https://5d.5ka.ru/api/orders/v1/orders/stores/"
-        params = {"lat": latitude, "lon": longitude}
-        
-        try:
-            response = await self.session.get(url, params=params, headers=self.headers)
-            response.raise_for_status()
-            data = response.json()
-            if data.get("results"):
-                return data["results"][0]  # Возвращаем первый магазин
-            return None
-        except Exception as e:
-            logger.error(f"Ошибка при поиске магазина: {e}")
-            return None
-
-    async def get_categories(self):
-        url = "https://5ka.ru/api/v2/categories/"
-        try:
-            response = await self.session.get(url, headers=self.headers)
-            response.raise_for_status()
-            return response.json()
-        except Exception as e:
-            logger.error(f"Ошибка при получении категорий: {e}")
-            return None
-
-    async def get_products(self, store_id: str, category_id: str):
-        url = f"https://5ka.ru/api/v2/products/?store={store_id}&category={category_id}"
-        try:
-            response = await self.session.get(url, headers=self.headers)
-            response.raise_for_status()
-            return response.json()
-        except Exception as e:
-            logger.error(f"Ошибка при получении товаров: {e}")
-            return None
-
-# === FastAPI приложение ===
-pyaterochka_client = None
+pyaterochka_session = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global pyaterochka_client
-    pyaterochka_client = PyaterochkaAPIClient()
-    await pyaterochka_client.__aenter__()
-    yield
-    await pyaterochka_client.__aexit__(None, None, None)
 
+    global pyaterochka_session
+    pyaterochka_session = Pyaterochka(
+        proxy=get_toolip_proxy(),
+        debug=True,
+        autoclose_browser=False,
+        trust_env=False
+    )
+    await pyaterochka_session.__aenter__()
+    
+    yield  
+
+# === FASTAPI ===
 app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(
@@ -163,11 +119,12 @@ app.add_middleware(
 async def ping():
     return JSONResponse(content={"status": "ok", "message": "Backend is alive!"})
 
-# === Модели запросов ===
+# === API ДЛЯ ДОСТАВКИ ЧЕРЕЗ PYATEROCHKA_API ===
 class Location(BaseModel):
     lat: float
     lon: float
 
+# Схема для второго запроса
 class ProductQuery(BaseModel):
     store_id: str
     category_id: str
@@ -177,37 +134,41 @@ api_router = APIRouter()
 @api_router.post("/get-store-and-categories")
 async def check_delivery(loc: Location):
     try:
-        store = await pyaterochka_client.find_store(loc.lat, loc.lon)
+        store = await pyaterochka_session.find_store(longitude=loc.lon, latitude=loc.lat)
         if not store:
             raise HTTPException(status_code=404, detail="Магазин не найден")
             
-        categories = await pyaterochka_client.get_categories()
-        if not categories:
-            raise HTTPException(status_code=500, detail="Не удалось получить категории")
-        
-        # Здесь можно добавить обработку категорий как в вашем оригинальном коде
+        catalog = await pyaterochka_session.categories_list(
+            subcategories=True,
+            mode=PurchaseMode.DELIVERY
+        )
+        flattened = categories.flatten_categories(catalog)
+        categories.flat_categories.clear()
+        categories.flat_categories.extend(flattened)
         return {
             "status": "ok",
             "store": store,
-            "categories": categories
+            "categories": catalog
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
 
 @api_router.post("/get-products")
 async def get_products(data: ProductQuery):
     try:
-        products = await pyaterochka_client.get_products(data.store_id, data.category_id)
-        if not products:
-            raise HTTPException(status_code=500, detail="Не удалось получить товары")
+        raw_products  = await pyaterochka_session.products_list(
+            category_id=data.category_id,
+            limit=100,
+            mode=PurchaseMode.DELIVERY,
+            sap_code_store_id=data.store_id
+        )
+        processed_data = products.process_products(raw_products)
         
-        # Здесь можно добавить обработку товаров как в вашем оригинальном коде
-        return {
-            "status": "ok",
-            "products": products
-        }
+        return {"status": "ok", "products": processed_data}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.post("/telegram")
 async def telegram_webhook(update: dict):
@@ -217,3 +178,5 @@ async def telegram_webhook(update: dict):
 
 # === Роутеры ===
 app.include_router(api_router)
+
+app.include_router(categories.router)
