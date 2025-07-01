@@ -7,7 +7,6 @@ export function renderProducts(productsData) {
         return;
     }
 
-    // Создаем сетку для товаров
     const grid = document.createElement('div');
     grid.className = 'products-grid';
 
@@ -15,15 +14,16 @@ export function renderProducts(productsData) {
         const card = document.createElement('div');
         card.className = 'product-card';
         
-        // Бейдж скидки (если есть)
-        if (product.is_discount) {
+        // Бейдж скидки (безопасная проверка)
+        if (product.is_discount && product.discount_price && product.price) {
+            const discountPercent = Math.round((1 - product.discount_price/product.price)*100);
             const discountBadge = document.createElement('div');
             discountBadge.className = 'product-discount-badge';
-            discountBadge.textContent = `${Math.round((1 - product.discount_price/product.price)*100)}% от ${product.step || 1} шт`;
+            discountBadge.textContent = `${discountPercent}% от ${product.step || 1} шт`;
             card.appendChild(discountBadge);
         }
 
-        // Рейтинг
+        // Рейтинг (с проверкой)
         const rating = document.createElement('div');
         rating.className = 'product-rating';
         rating.textContent = product.rating ? product.rating.toFixed(1) : '—';
@@ -32,10 +32,10 @@ export function renderProducts(productsData) {
         // Название товара
         const name = document.createElement('div');
         name.className = 'product-name';
-        name.textContent = product.name;
+        name.textContent = product.name || 'Без названия';
         card.appendChild(name);
 
-        // Вес/объем
+        // Вес/объем (с проверкой)
         if (product.unit) {
             const unit = document.createElement('div');
             unit.className = 'product-unit';
@@ -43,14 +43,17 @@ export function renderProducts(productsData) {
             card.appendChild(unit);
         }
 
-        // Цена и кнопка
+        // Цена и кнопка (с проверкой)
         const priceWrapper = document.createElement('div');
         priceWrapper.className = 'product-price-wrapper';
         
-        const price = document.createElement('div');
-        price.className = 'product-price';
-        price.textContent = `${product.discount_price || product.price}₽`;
-        priceWrapper.appendChild(price);
+        const priceValue = product.discount_price || product.price;
+        if (priceValue) {
+            const price = document.createElement('div');
+            price.className = 'product-price';
+            price.textContent = `${priceValue}₽`;
+            priceWrapper.appendChild(price);
+        }
         
         const addButton = document.createElement('button');
         addButton.className = 'product-add-button';
@@ -59,8 +62,9 @@ export function renderProducts(productsData) {
         
         card.appendChild(priceWrapper);
 
-        // Бейдж "Комбо" (пример для определенных категорий)
-        if (product.category_name.includes('Готовые блюда')) {
+        // Бейдж "Комбо" (только если category_name существует)
+        if (productsData.category_name && typeof productsData.category_name === 'string' && 
+            productsData.category_name.includes('Готовые блюда')) {
             const comboBadge = document.createElement('div');
             comboBadge.className = 'product-combo-badge';
             comboBadge.textContent = 'Комбо';
