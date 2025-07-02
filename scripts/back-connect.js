@@ -1,4 +1,4 @@
-const API_BASE_URL = "https://fiveka-web-app.onrender.com/v1";
+const API_BASE_URL = "https://fiveka-web-app.onrender.com";
 
 async function makeRequest(endpoint, method = "GET", body = null) {
     const options = {
@@ -22,23 +22,17 @@ async function makeRequest(endpoint, method = "GET", body = null) {
     return await response.json();
 }
 
+// Экспорт объекта с методами
 export const apiService = {
-    // Проверка доступности сервиса
     ping() {
         return makeRequest("/ping");
     },
-
-    // Получение магазинов по координатам
     getStores(lat, lon) {
         return makeRequest("/api/stores", "POST", { lat, lon });
     },
-
-    // Получение категорий
     getCategories() {
         return makeRequest("/api/categories");
     },
-
-    // Получение товаров
     getProducts(storeId, categoryId) {
         return makeRequest("/api/products", "POST", {
             store_id: storeId,
