@@ -36,11 +36,12 @@ export function initCatalog() {
     productsList.style.display = 'none';
     backBtn.style.display = 'none';
   });
+}
 
-  // Инициализация адреса
+document.addEventListener('DOMContentLoaded', () => {
   const addressElem = document.getElementById('address');
   const address = localStorage.getItem('userAddress');
   if (address && addressElem) {
     addressElem.textContent = address;
   }
-}
+});
