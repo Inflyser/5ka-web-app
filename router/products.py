@@ -1,3 +1,10 @@
+from fastapi import APIRouter
+from fastapi.responses import JSONResponse
+
+router = APIRouter()
+
+flat_products = []  # Здесь будем хранить обработанные продукты
+
 def process_products(raw_products: dict) -> dict:
     # Основная информация о категории
     category_info = {
@@ -38,3 +45,7 @@ def process_products(raw_products: dict) -> dict:
         "products": processed_products,
         "products_count": len(processed_products)
     }
+
+@router.get("/products")
+async def get_products():
+    return JSONResponse(content=flat_products)

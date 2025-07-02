@@ -163,9 +163,11 @@ async def get_products(data: ProductQuery):
             mode=PurchaseMode.DELIVERY,
             sap_code_store_id=data.store_id
         )
-        processed_data = products.process_products(raw_products)
+        flattened2 = products.process_products(raw_products)
+        products.process_products.clear()
+        products.process_products.extend(flattened2)
         
-        return {"status": "ok", "products": processed_data}
+        return {"status": "ok", "products": flattened2}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
