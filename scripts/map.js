@@ -40,7 +40,6 @@ ymaps.ready(function () {
             const address = firstGeoObject ? firstGeoObject.getAddressLine() : 'Мы вас не нашли';
             document.getElementById('address').innerText = 'Адрес доставки';
             document.getElementById('address-input').value = address;
-            localStorage.setItem('userAddress', address);
         });
     });
 });
