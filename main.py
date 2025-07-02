@@ -167,31 +167,34 @@ async def get_products(
     - limit: int - лимит товаров (по умолчанию 100)
     """
     try:
-        # 1. Получаем данные из API
-        products_list = await pyaterochka_session.products_list(
+        raw_products = await pyaterochka_session.products_list(
             category_id=data.category_id,
             limit=limit,
             mode=PurchaseMode.DELIVERY,
             sap_code_store_id=data.store_id
         )
+               
+        # 2. Обрабатываем данные через существующую функцию
+        processed_data = products.process_products(raw_products)
         
-        # 2. Обрабатываем данные
-        flattened = products.process_products(products_list)
+        # 3. Обновляем глобальное хранилище (products_store)
+        products.products_store.clear()
+        products.products_store.extend(processed_data["products"])
         
-        # 3. Обновляем хранилище
-        products.flat_products.clear()
-        products.flat_products.extend(flattened)
-        
-        # 4. Возвращаем результат
-        return {
-            "status": "ok",
-            "count": len(flattened),
-            "products": flattened,
-            "category_info": {
-                "id": data.category_id,
-                "store_id": data.store_id
+        # 4. Возвращаем результат в том же формате, что и другие эндпоинты
+        return JSONResponse({
+            "status": "success",
+            "count": len(processed_data["products"]),
+            "data": {
+                "category_info": {
+                    "id": data.category_id,
+                    "store_id": data.store_id,
+                    "name": processed_data.get("category_name", "")
+                },
+                "products": processed_data["products"],
+                "filters": processed_data.get("filters", [])
             }
-        }
+        })
         
     except Exception as e:
         logger.error(f"Error getting products: {str(e)}")
