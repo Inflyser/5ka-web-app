@@ -155,21 +155,75 @@ async def check_delivery(loc: Location):
     
 
 @api_router.post("/get-products")
-async def get_products(data: ProductQuery):
-    try:
-        products_list  = await pyaterochka_session.products_list(
-            category_id=data.category_id,
-            limit=100,
-            mode=PurchaseMode.DELIVERY,
-            sap_code_store_id=data.store_id
-        )
-        flattened = products.process_products(products_list)
-        products.flat_products.clear()
-        products.flat_products.extend(flattened)
-        
-        return {"status": "ok", "products": products_list}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+async def get_products(
+    data: ProductQuery, 
+    limit: Optional[int] = 100,
+    max_retries: int = 3
+):
+    """
+    Получает продукты из API Пятерочки и возвращает обработанные данные
+    
+    Параметры:
+    - data: ProductQuery - параметры запроса (category_id, store_id)
+    - limit: int - максимальное количество товаров для получения (по умолчанию 100)
+    - max_retries: int - количество попыток запроса при ошибках (по умолчанию 3)
+    """
+    retry_count = 0
+    last_exception = None
+    
+    while retry_count < max_retries:
+        try:
+            # 1. Получаем данные из API
+            products_list = await pyaterochka_session.products_list(
+                category_id=data.category_id,
+                limit=limit,
+                mode=PurchaseMode.DELIVERY,
+                sap_code_store_id=data.store_id
+            )
+            
+            # 2. Проверяем, что данные получены
+            if not products_list or not getattr(products_list, "products", None):
+                logger.warning(f"Empty products list for category {data.category_id}")
+                raise HTTPException(
+                    status_code=404,
+                    detail="No products found for this category"
+                )
+            
+            # 3. Обрабатываем данные
+            flattened = products.process_products(products_list)
+            
+            # 4. Обновляем хранилище (если нужно)
+            products.flat_products.clear()
+            products.flat_products.extend(flattened)
+            
+            # 5. Возвращаем обработанные данные
+            return {
+                "status": "ok",
+                "count": len(flattened),
+                "products": flattened,
+                "category_info": {
+                    "id": data.category_id,
+                    "store_id": data.store_id
+                }
+            }
+            
+        except HTTPException:
+            raise  # Пробрасываем HTTPException как есть
+        except Exception as e:
+            logger.error(
+                f"Attempt {retry_count + 1} failed for category {data.category_id}: {str(e)}",
+                exc_info=True
+            )
+            last_exception = e
+            retry_count += 1
+            continue
+    
+    # Если все попытки неудачны
+    logger.error(f"All {max_retries} attempts failed for category {data.category_id}")
+    raise HTTPException(
+        status_code=503,
+        detail=f"Failed to get products after {max_retries} attempts: {str(last_exception)}"
+    )
 
 
 @app.post("/telegram")
