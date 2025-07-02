@@ -2,7 +2,7 @@ export function renderProducts(productsData) {
     const productsListElem = document.getElementById('productsList');
     productsListElem.innerHTML = '';
 
-    if (!productsData || !productsData.products || productsData.products.length === 0) {
+    if (!productsData?.products?.length) {
         productsListElem.innerHTML = '<p>Товары не найдены</p>';
         return;
     }
@@ -14,28 +14,33 @@ export function renderProducts(productsData) {
         const card = document.createElement('div');
         card.className = 'product-card';
         
-        // Бейдж скидки (безопасная проверка)
-        if (product.is_discount && product.discount_price && product.price) {
-            const discountPercent = Math.round((1 - product.discount_price/product.price)*100);
+        // Изображение товара
+        if (product.image) {
+            const img = document.createElement('img');
+            img.src = product.image;
+            img.alt = product.name;
+            img.className = 'product-image';
+            card.appendChild(img);
+        }
+
+        // Бейдж скидки
+        if (product.discount_price) {
+            const discountPercent = Math.round(
+                (1 - product.discount_price / product.price) * 100
+            );
             const discountBadge = document.createElement('div');
             discountBadge.className = 'product-discount-badge';
-            discountBadge.textContent = `${discountPercent}% от ${product.step || 1} шт`;
+            discountBadge.textContent = `-${discountPercent}%`;
             card.appendChild(discountBadge);
         }
 
-        // Рейтинг (с проверкой)
-        const rating = document.createElement('div');
-        rating.className = 'product-rating';
-        rating.textContent = product.rating ? product.rating.toFixed(1) : '—';
-        card.appendChild(rating);
-
         // Название товара
-        const name = document.createElement('div');
+        const name = document.createElement('h3');
         name.className = 'product-name';
         name.textContent = product.name || 'Без названия';
         card.appendChild(name);
 
-        // Вес/объем (с проверкой)
+        // Вес/объем
         if (product.unit) {
             const unit = document.createElement('div');
             unit.className = 'product-unit';
@@ -43,33 +48,30 @@ export function renderProducts(productsData) {
             card.appendChild(unit);
         }
 
-        // Цена и кнопка (с проверкой)
+        // Цены
         const priceWrapper = document.createElement('div');
         priceWrapper.className = 'product-price-wrapper';
         
-        const priceValue = product.discount_price || product.price;
-        if (priceValue) {
-            const price = document.createElement('div');
-            price.className = 'product-price';
-            price.textContent = `${priceValue}₽`;
-            priceWrapper.appendChild(price);
+        if (product.discount_price) {
+            const oldPrice = document.createElement('span');
+            oldPrice.className = 'product-old-price';
+            oldPrice.textContent = `${product.price}₽`;
+            priceWrapper.appendChild(oldPrice);
         }
-        
-        const addButton = document.createElement('button');
-        addButton.className = 'product-add-button';
-        addButton.textContent = 'В корзину';
-        priceWrapper.appendChild(addButton);
+
+        const price = document.createElement('div');
+        price.className = 'product-price';
+        price.textContent = `${(product.discount_price || product.price)}₽`;
+        priceWrapper.appendChild(price);
         
         card.appendChild(priceWrapper);
 
-        // Бейдж "Комбо" (только если category_name существует)
-        if (productsData.category_name && typeof productsData.category_name === 'string' && 
-            productsData.category_name.includes('Готовые блюда')) {
-            const comboBadge = document.createElement('div');
-            comboBadge.className = 'product-combo-badge';
-            comboBadge.textContent = 'Комбо';
-            card.appendChild(comboBadge);
-        }
+        // Кнопка добавления
+        const addButton = document.createElement('button');
+        addButton.className = 'product-add-button';
+        addButton.textContent = product.in_stock ? 'В корзину' : 'Нет в наличии';
+        addButton.disabled = !product.in_stock;
+        card.appendChild(addButton);
 
         grid.appendChild(card);
     });
