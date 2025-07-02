@@ -182,12 +182,12 @@ async def get_products(
             )
             
             # 2. Проверяем, что данные получены
-            if not products_list or not getattr(products_list, "products", None):
-                logger.warning(f"Empty products list for category {data.category_id}")
-                raise HTTPException(
-                    status_code=404,
-                    detail="No products found for this category"
-                )
+            # if not products_list or not getattr(products_list, "products", None):
+            #     logger.warning(f"Empty products list for category {data.category_id}")
+            #     raise HTTPException(
+            #         status_code=404,
+            #         detail="No products found for this category"
+            #     )
             
             # 3. Обрабатываем данные
             flattened = products.process_products(products_list)
