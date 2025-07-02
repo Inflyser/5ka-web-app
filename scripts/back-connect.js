@@ -1,17 +1,51 @@
-async function checkDelivery(lat, lon) {
-    const response = await fetch("https://fiveka-web-app.onrender.com/get-store-and-categories", {
-        method: "POST",
+const API_BASE_URL = "https://fiveka-web-app.onrender.com/v1";
+
+async function makeRequest(endpoint, method = "GET", body = null) {
+    const options = {
+        method,
         headers: {
             "Content-Type": "application/json",
         },
-        body: JSON.stringify({ lat, lon }),
-    });
+    };
+
+    if (body) {
+        options.body = JSON.stringify(body);
+    }
+
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
+    
     if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.detail || "Ошибка при проверке доставки");
+        throw new Error(error.detail || `HTTP error! status: ${response.status}`);
     }
+
     return await response.json();
 }
+
+export const apiService = {
+    // Проверка доступности сервиса
+    ping() {
+        return makeRequest("/ping");
+    },
+
+    // Получение магазинов по координатам
+    getStores(lat, lon) {
+        return makeRequest("/api/stores", "POST", { lat, lon });
+    },
+
+    // Получение категорий
+    getCategories() {
+        return makeRequest("/api/categories");
+    },
+
+    // Получение товаров
+    getProducts(storeId, categoryId) {
+        return makeRequest("/api/products", "POST", {
+            store_id: storeId,
+            category_id: categoryId
+        });
+    }
+};
 
 async function handleDeliveryCheck() {
     try {
