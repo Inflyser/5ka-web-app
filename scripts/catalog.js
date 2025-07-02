@@ -1,7 +1,3 @@
-import { renderCategories } from './categories.js';
-import { renderProducts } from './product.js';
-import { getProducts } from './api.js';
-
 export function initCatalog() {
   const rawCategories = JSON.parse(localStorage.getItem('categories'));
   const storeId = localStorage.getItem('storeId');
@@ -22,11 +18,23 @@ export function initCatalog() {
     }
     
     try {
-      const productsData = await getProducts(storeId, categoryId);
-      renderProducts(productsData.products);
+      const response = await getProducts(storeId, categoryId);
+      
+      // Проверяем, что данные пришли в правильном формате
+      if (!response || !response.products) {
+        throw new Error('Неверный формат данных о товарах');
+      }
+      
+      // Формируем объект, который ожидает renderProducts
+      const productsData = {
+        products: response.products,
+        category_name: response.category_name || ''
+      };
+      
+      renderProducts(productsData);
     } catch (err) {
-      console.error(err);
-      productsList.innerHTML = 'Ошибка при загрузке товаров.';
+      console.error('Ошибка загрузки товаров:', err);
+      productsList.innerHTML = 'Ошибка при загрузке товаров. Попробуйте позже.';
     }
   });
 
@@ -37,11 +45,3 @@ export function initCatalog() {
     backBtn.style.display = 'none';
   });
 }
-
-document.addEventListener('DOMContentLoaded', () => {
-  const addressElem = document.getElementById('address');
-  const address = localStorage.getItem('userAddress');
-  if (address && addressElem) {
-    addressElem.textContent = address;
-  }
-});
