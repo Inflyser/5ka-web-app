@@ -142,4 +142,4 @@ async def get_products(request: StoreRequest):
     return {"status": "ok", "data": data}
 
 # Подключение роутера
-app.include_router(api_router, prefix="/v1")
+app.include_router(api_router)
