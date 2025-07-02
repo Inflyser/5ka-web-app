@@ -164,7 +164,6 @@ async def get_products(data: ProductQuery):
             sap_code_store_id=data.store_id
         )
         flattened2 = products.process_products(products_list)
-        products.process_products.clear()
         products.process_products.extend(flattened2)
         
         return {"status": "ok", "products": products_list}
