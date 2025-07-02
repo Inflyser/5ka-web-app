@@ -1,61 +1,47 @@
-export function renderCategories(rawCategories, searchQuery = '', onCategoryClick) {
-    const listElem = document.getElementById('categoriesList');
-    listElem.innerHTML = '';
+import { renderCategories } from './categories.js';
+import { renderProducts } from './product.js';
+import { getProducts } from './api.js';
 
-    if (!rawCategories || rawCategories.length === 0) {
-        listElem.innerHTML = '<p>Категории не найдены</p>';
-        return;
+export function initCatalog() {
+  const rawCategories = JSON.parse(localStorage.getItem('categories'));
+  const storeId = localStorage.getItem('storeId');
+  
+  const categoriesList = document.getElementById('categoriesList');
+  const productsList = document.getElementById('productsList');
+  const backBtn = document.getElementById('backBtn');
+
+  renderCategories(rawCategories, '', async (categoryId) => {
+    categoriesList.style.display = 'none';
+    productsList.style.display = 'block';
+    backBtn.style.display = 'block';
+    productsList.innerHTML = 'Загрузка товаров...';
+    
+    if (!storeId) {
+      productsList.innerHTML = 'Ошибка: store_id не найден';
+      return;
     }
+    
+    try {
+      const productsData = await getProducts(storeId, categoryId);
+      renderProducts(productsData.products);
+    } catch (err) {
+      console.error(err);
+      productsList.innerHTML = 'Ошибка при загрузке товаров.';
+    }
+  });
 
-    rawCategories.forEach(parent => {
-        const matchedSubs = parent.categories.filter(sub =>
-            sub.name.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-
-        if (matchedSubs.length === 0) return;
-
-        const categoryBlock = document.createElement('div');
-        categoryBlock.className = 'category-block';
-
-        const categoryTitle = document.createElement('div');
-        categoryTitle.className = 'category-title';
-        categoryTitle.textContent = parent.name || 'Без названия';
-
-        const subGrid = document.createElement('div');
-        subGrid.className = 'subcategory-grid';
-
-        matchedSubs.forEach(sub => {
-            const card = document.createElement('div');
-            card.className = 'subcategory-card';
-
-            const img = document.createElement('img');
-            img.className = 'subcategory-image';
-            img.src = sub.image_link;
-            img.alt = sub.name;
-
-            const name = document.createElement('div');
-            name.className = 'subcategory-name';
-            name.textContent = sub.name;
-
-            card.appendChild(name);
-            card.appendChild(img);
-
-            // 👉 Клик вызывает внешний обработчик
-            card.addEventListener('click', () => {
-                onCategoryClick?.(sub.id);
-            });
-
-            subGrid.appendChild(card);
-        });
-
-        categoryBlock.appendChild(categoryTitle);
-        categoryBlock.appendChild(subGrid);
-        listElem.appendChild(categoryBlock);
-    });
+  backBtn.addEventListener('click', () => {
+    productsList.innerHTML = '';
+    categoriesList.style.display = 'block';
+    productsList.style.display = 'none';
+    backBtn.style.display = 'none';
+  });
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-    const rawCategories = JSON.parse(localStorage.getItem('categories'));
-    console.log("📦 Категории из localStorage:", rawCategories);
-    renderCategories(rawCategories);
+document.addEventListener('DOMContentLoaded', () => {
+  const addressElem = document.getElementById('address');
+  const address = localStorage.getItem('userAddress');
+  if (address && addressElem) {
+    addressElem.textContent = address;
+  }
 });
