@@ -1,9 +1,6 @@
 import ssl
-import aiohttp
-import asyncio
 import logging
 import os
-from curl_cffi.requests import AsyncSession
 from typing import Optional
 from fastapi import FastAPI, APIRouter, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -18,8 +15,7 @@ from aiogram.filters import CommandStart
 from aiogram.types import Message, WebAppInfo, Update
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.exceptions import TelegramForbiddenError
-import random
-import string
+from curl_cffi.requests import AsyncSession
 
 # === НАСТРОЙКИ ===
 load_dotenv()
@@ -35,13 +31,6 @@ logger = logging.getLogger(__name__)
 ssl_context = ssl.create_default_context()
 ssl_context.check_hostname = False
 ssl_context.verify_mode = ssl.CERT_NONE
-
-class PatchedSession(aiohttp.ClientSession):
-    def __init__(self, *args, **kwargs):
-        kwargs.setdefault("connector", aiohttp.TCPConnector(ssl=ssl_context))
-        super().__init__(*args, **kwargs)
-
-aiohttp.ClientSession = PatchedSession
 
 # === TELEGRAM BOT ===
 def webapp_builder() -> InlineKeyboardBuilder:
@@ -67,7 +56,7 @@ async def start(message: Message):
 bot = Bot(
     BOT_TOKEN,
     default=DefaultBotProperties(parse_mode=ParseMode.HTML)
-    )
+)
 dp = Dispatcher()
 dp.include_router(tg_router)
 
@@ -103,7 +92,7 @@ class PyaterochkaAPIClient:
             response.raise_for_status()
             data = response.json()
             if data.get("results"):
-                return data["results"][0]  # Возвращаем первый магазин
+                return data["results"][0]
             return None
         except Exception as e:
             logger.error(f"Ошибка при поиске магазина: {e}")
@@ -176,7 +165,6 @@ async def check_delivery(loc: Location):
         if not categories:
             raise HTTPException(status_code=500, detail="Не удалось получить категории")
         
-        # Здесь можно добавить обработку категорий как в вашем оригинальном коде
         return {
             "status": "ok",
             "store": store,
@@ -192,7 +180,6 @@ async def get_products(data: ProductQuery):
         if not products:
             raise HTTPException(status_code=500, detail="Не удалось получить товары")
         
-        # Здесь можно добавить обработку товаров как в вашем оригинальном коде
         return {
             "status": "ok",
             "products": products
