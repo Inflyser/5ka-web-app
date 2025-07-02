@@ -1,69 +1,47 @@
+import { renderCategories } from './categories.js';
+import { renderProducts } from './product.js';
+import { getProducts } from './api.js';
+
 export function initCatalog() {
-  // 1. Получаем данные из localStorage с проверкой
-  const rawCategories = localStorage.getItem('categories');
+  const rawCategories = JSON.parse(localStorage.getItem('categories'));
   const storeId = localStorage.getItem('storeId');
   
-  if (!rawCategories) {
-    console.error('Категории не найдены в localStorage');
-    return;
-  }
-
-  // 2. Получаем DOM-элементы
   const categoriesList = document.getElementById('categoriesList');
   const productsList = document.getElementById('productsList');
   const backBtn = document.getElementById('backBtn');
 
-  if (!categoriesList || !productsList || !backBtn) {
-    console.error('Не найдены необходимые DOM-элементы');
-    return;
-  }
-
-  try {
-    // 3. Парсим категории с обработкой ошибок
-    const categories = JSON.parse(rawCategories);
+  renderCategories(rawCategories, '', async (categoryId) => {
+    categoriesList.style.display = 'none';
+    productsList.style.display = 'block';
+    backBtn.style.display = 'block';
+    productsList.innerHTML = 'Загрузка товаров...';
     
-    // 4. Рендерим категории (убедитесь, что renderCategories экспортируется правильно)
-    renderCategories(categories, '', async (categoryId) => {
-      // Переключение видимости блоков
-      categoriesList.style.display = 'none';
-      productsList.style.display = 'block';
-      backBtn.style.display = 'block';
-      productsList.innerHTML = 'Загрузка товаров...';
-      
-      if (!storeId) {
-        productsList.innerHTML = 'Ошибка: store_id не найден';
-        return;
-      }
-      
-      try {
-        const response = await getProducts(storeId, categoryId);
-        
-        if (!response || !response.products) {
-          throw new Error('Неверный формат данных о товарах');
-        }
-        
-        const productsData = {
-          products: response.products,
-          category_name: response.category_name || ''
-        };
-        
-        renderProducts(productsData);
-      } catch (err) {
-        console.error('Ошибка загрузки товаров:', err);
-        productsList.innerHTML = 'Ошибка при загрузке товаров. Попробуйте позже.';
-      }
-    });
+    if (!storeId) {
+      productsList.innerHTML = 'Ошибка: store_id не найден';
+      return;
+    }
+    
+    try {
+      const productsData = await getProducts(storeId, categoryId);
+      renderProducts(productsData.products);
+    } catch (err) {
+      console.error(err);
+      productsList.innerHTML = 'Ошибка при загрузке товаров.';
+    }
+  });
 
-    // 5. Обработчик кнопки "Назад"
-    backBtn.addEventListener('click', () => {
-      productsList.innerHTML = '';
-      categoriesList.style.display = 'block';
-      productsList.style.display = 'none';
-      backBtn.style.display = 'none';
-    });
-
-  } catch (e) {
-    console.error('Ошибка при обработке категорий:', e);
-    categoriesList.innerHTML = 'Ошибка при загрузке категорий';
-  }
+  backBtn.addEventListener('click', () => {
+    productsList.innerHTML = '';
+    categoriesList.style.display = 'block';
+    productsList.style.display = 'none';
+    backBtn.style.display = 'none';
+  });
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+  const addressElem = document.getElementById('address');
+  const address = localStorage.getItem('userAddress');
+  if (address && addressElem) {
+    addressElem.textContent = address;
+  }
+});
