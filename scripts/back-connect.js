@@ -26,7 +26,7 @@ async function handleDeliveryCheck() {
         const deliveryResult = await checkDelivery(lat, lon);
         const deliveryAddress = deliveryResult.address;
         localStorage.setItem('userAddress', deliveryAddress);
-        document.getElementById("address").textContent = "📍 Ваш адрес: " + deliveryAddress;
+        document.getElementById("address").textContent = "Ваш адрес: " + deliveryAddress;
 
         if (deliveryResult && deliveryResult.categories && deliveryResult.store) {
             // Сохраняем категории
