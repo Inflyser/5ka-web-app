@@ -167,7 +167,7 @@ async def get_products(data: ProductQuery):
         products.flat_products.clear()
         products.flat_products.extend(flattened)
         
-        return {"status": "ok", "products": flattened}
+        return {"status": "ok", "products": products_list}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
