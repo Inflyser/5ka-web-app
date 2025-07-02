@@ -157,17 +157,17 @@ async def check_delivery(loc: Location):
 @api_router.post("/get-products")
 async def get_products(data: ProductQuery):
     try:
-        raw_products  = await pyaterochka_session.products_list(
+        products_list  = await pyaterochka_session.products_list(
             category_id=data.category_id,
             limit=100,
             mode=PurchaseMode.DELIVERY,
             sap_code_store_id=data.store_id
         )
-        flattened2 = products.process_products(raw_products)
+        flattened2 = products.process_products(products_list)
         products.process_products.clear()
         products.process_products.extend(flattened2)
         
-        return {"status": "ok", "products": flattened2}
+        return {"status": "ok", "products": products_list}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
