@@ -5,31 +5,27 @@ export async function getProducts(store_id, category_id) {
             headers: {
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({ store_id, category_id }),
+            body: JSON.stringify({ 
+                store_id: store_id,
+                category_id: category_id 
+            }),
         });
 
         if (!response.ok) {
-            let errorMsg = "Ошибка при получении товаров";
-            try {
-                const errorData = await response.json();
-                errorMsg = errorData.detail || errorData.message || errorMsg;
-            } catch (e) {
-                console.error("Не удалось разобрать ошибку:", e);
-            }
-            throw new Error(errorMsg);
+            const errorData = await response.json();
+            throw new Error(errorData.detail || "Ошибка при получении товаров");
         }
 
         const data = await response.json();
         
-        // Проверка структуры ответа
-        if (!data || data.status !== "ok" || !data.data) {
-            throw new Error("Неверный формат данных от сервера");
+        if (data.status !== "success") {
+            throw new Error("Неверный статус ответа");
         }
         
-        return data;
+        return data.data; // Возвращаем только data часть
         
     } catch (error) {
         console.error("Ошибка в getProducts:", error);
-        throw error; // Перебрасываем ошибку дальше
+        throw error;
     }
 }

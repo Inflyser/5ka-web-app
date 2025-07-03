@@ -22,11 +22,11 @@ export function initCatalog() {
     }
     
     try {
-      const productsData = await getProducts(storeId, categoryId);
-      renderProducts(productsData.products);
+      const response = await getProducts(storeId, categoryId);
+      renderProducts(response); // Теперь response содержит уже data часть
     } catch (err) {
       console.error(err);
-      productsList.innerHTML = 'Ошибка при загрузке товаров.';
+      productsList.innerHTML = `Ошибка: ${err.message}`;
     }
   });
 
@@ -37,11 +37,3 @@ export function initCatalog() {
     backBtn.style.display = 'none';
   });
 }
-
-document.addEventListener('DOMContentLoaded', () => {
-  const addressElem = document.getElementById('address');
-  const address = localStorage.getItem('userAddress');
-  if (address && addressElem) {
-    addressElem.textContent = address;
-  }
-});
