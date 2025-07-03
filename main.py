@@ -155,17 +155,7 @@ async def check_delivery(loc: Location):
     
 
 @api_router.post("/get-products")
-async def get_products(
-    data: ProductQuery, 
-    limit: int = 100
-):
-    """
-    Получает продукты из API Пятерочки
-    
-    Параметры:
-    - data: ProductQuery - {category_id, store_id}
-    - limit: int - лимит товаров (по умолчанию 100)
-    """
+async def get_products(data: ProductQuery, limit: int = 100):
     try:
         raw_products = await pyaterochka_session.products_list(
             category_id=data.category_id,
@@ -173,27 +163,17 @@ async def get_products(
             mode=PurchaseMode.DELIVERY,
             sap_code_store_id=data.store_id
         )
-               
-        # 2. Обрабатываем данные через существующую функцию
+        
         processed_data = products.process_products(raw_products)
         
-        # 3. Обновляем глобальное хранилище (products_store)
+        # Обновляем хранилище
         products.products_store.clear()
         products.products_store.extend(processed_data["products"])
         
-        # 4. Возвращаем результат в том же формате, что и другие эндпоинты
         return JSONResponse({
             "status": "success",
             "count": len(processed_data["products"]),
-            "data": {
-                "category_info": {
-                    "id": data.category_id,
-                    "store_id": data.store_id,
-                    "name": processed_data.get("category_name", "")
-                },
-                "products": processed_data["products"],
-                "filters": processed_data.get("filters", [])
-            }
+            "data": processed_data
         })
         
     except Exception as e:

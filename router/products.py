@@ -1,9 +1,11 @@
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
-from typing import List, Dict, Optional
+from typing import Optional
 import re
+import logging
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 # Временное хранилище (в production используйте БД)
 products_store = []
@@ -19,9 +21,9 @@ def safe_float_conversion(value: Optional[str]) -> Optional[float]:
 def process_products(raw_products: dict) -> dict:
     try:
         category_info = {
-            "category_id": raw_products.get("parent_id", ""),
-            "category_name": raw_products.get("name", ""),
-            "filters": raw_products.get("filters", [])
+            "id": raw_products.get("parent_id", ""),
+            "name": raw_products.get("name", ""),
+            "store_id": raw_products.get("sap_code_store_id", "")
         }
         
         processed_products = []
@@ -44,36 +46,15 @@ def process_products(raw_products: dict) -> dict:
             }
             processed_products.append(processed_product)
         
-        processed_products.sort(
-            key=lambda x: (-x["is_discount"], -x["rating"])
-        )
+        # Сортировка: сначала товары со скидкой, затем по рейтингу
+        processed_products.sort(key=lambda x: (-x["is_discount"], -x["rating"]))
         
         return {
-            **category_info,
+            "category_info": category_info,
             "products": processed_products,
+            "filters": raw_products.get("filters", []),
             "products_count": len(processed_products)
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error processing products: {str(e)}")
-
-@router.post("/update_products")
-async def update_products(raw_products: dict):
-    try:
-        processed = process_products(raw_products)
-        products_store.clear()
-        products_store.extend(processed["products"])
-        return {"status": "success", "count": len(products_store)}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-@router.get("/products")
-async def get_products(limit: int = 20, offset: int = 0):
-    try:
-        return {
-            "products": products_store[offset:offset+limit],
-            "total": len(products_store),
-            "limit": limit,
-            "offset": offset
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Error processing products: {str(e)}")
+        raise
