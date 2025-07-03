@@ -1,106 +1,60 @@
-const API_BASE_URL = "https://fiveka-web-app.onrender.com";
-
-// Основная функция для запросов
-async function makeRequest(endpoint, method = "GET", body = null) {
-    const options = {
-        method,
+async function checkDelivery(lat, lon) {
+    const response = await fetch("https://fiveka-web-app.onrender.com/get-store-and-categories", {
+        method: "POST",
         headers: {
             "Content-Type": "application/json",
         },
-    };
-
-    if (body) {
-        options.body = JSON.stringify(body);
-    }
-
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
-    
+        body: JSON.stringify({ lat, lon }),
+    });
     if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.detail || `Ошибка: ${response.status}`);
+        throw new Error(error.detail || "Ошибка при проверке доставки");
     }
-
     return await response.json();
 }
 
-// Проверка доставки
-async function checkDelivery(lat, lon) {
-    try {
-        // 1. Получаем магазины
-        const storesData = await makeRequest("/api/stores", "POST", { lat, lon });
-        if (!storesData.results || storesData.results.length === 0) {
-            throw new Error("Нет магазинов в этой области");
-        }
-
-        const store = storesData.results[0];
-        
-        // 2. Получаем категории
-        const categoriesData = await makeRequest("/api/categories");
-        
-        return {
-            address: store.address,
-            store: store,
-            categories: categoriesData
-        };
-        
-    } catch (error) {
-        console.error("Ошибка проверки доставки:", error);
-        throw error;
-    }
-}
-
-// Обработчик кнопки
 async function handleDeliveryCheck() {
-    const button = document.getElementById("checkDeliveryBtn");
-    const statusElem = document.getElementById("status");
-    
     try {
-        button.disabled = true;
-        button.textContent = "Поиск...";
-        
-        // Получаем координаты с карты
-        const coords = map.getCenter();
+        const coords = map.getCenter(); // [lat, lon]
         const lat = coords[0];
         const lon = coords[1];
-        
-        // Проверяем доставку
-        const result = await checkDelivery(lat, lon);
-        
-        // Сохраняем данные
-        localStorage.setItem('deliveryData', JSON.stringify({
-            address: result.address,
-            storeId: result.store.sap_code,
-            categories: result.categories
-        }));
-        
-        // Показываем адрес
-        document.getElementById("address").textContent = result.address;
-        
-        // Переходим в каталог
-        window.location.href = "catalog.html";
-        
+        console.log("📍 Проверка координат:", lat, lon);
+
+        // Сохраняем координаты
+        localStorage.setItem('userCoords', JSON.stringify({ lat, lon }));
+
+        const deliveryResult = await checkDelivery(lat, lon);
+        const deliveryAddress = deliveryResult.address;
+        localStorage.setItem('userAddress', deliveryAddress);
+        document.getElementById("address").textContent = "Ваш адрес: " + deliveryAddress;
+
+        if (deliveryResult && deliveryResult.categories && deliveryResult.store) {
+            // Сохраняем категории
+            localStorage.setItem('categories', JSON.stringify(deliveryResult.categories));
+
+            // Сохраняем store_id для дальнейших запросов
+            localStorage.setItem('storeId', deliveryResult.store.sap_code);
+           
+
+            // Переходим на страницу с выбором категории
+            window.location.href = 'catalog.html';
+            return;
+        } else {
+            document.getElementById("status").textContent = "❌ Категории или магазин не получены";
+        }
     } catch (error) {
         console.error("Ошибка:", error);
+        const statusElem = document.getElementById("status");
         if (statusElem) {
-            statusElem.textContent = error.message;
+            statusElem.textContent = "⚠️ Ошибка при проверке доставки: " + error.message;
         }
-    } finally {
-        button.disabled = false;
-        button.textContent = "Доставить сюда";
     }
 }
 
-// Инициализация
 document.addEventListener("DOMContentLoaded", () => {
     const button = document.getElementById("checkDeliveryBtn");
     if (button) {
         button.addEventListener("click", handleDeliveryCheck);
     }
-    
-    // Восстанавливаем адрес если есть
-    const savedData = localStorage.getItem('deliveryData');
-    if (savedData) {
-        const { address } = JSON.parse(savedData);
-        document.getElementById("address").textContent = address;
-    }
 });
+console.log("✅ Скрипт back-connect.js загружен");
