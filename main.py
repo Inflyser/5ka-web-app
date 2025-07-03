@@ -77,6 +77,10 @@ bot = Bot(
 dp = Dispatcher()
 dp.include_router(tg_router)
 
+import ssl
+from curl_cffi.requests import AsyncSession
+from curl_cffi.requests.errors import RequestsError
+
 class PyaterochkaAPI:
     def __init__(self, proxy: Optional[str] = None):
         self.base_url = PYATEROCHKA_API_URL
@@ -89,12 +93,16 @@ class PyaterochkaAPI:
         }
         self.proxy = proxy
         self.session = None
+        self.ssl_context = ssl.create_default_context()
+        self.ssl_context.check_hostname = False
+        self.ssl_context.verify_mode = ssl.CERT_NONE
 
     async def __aenter__(self):
         self.session = AsyncSession(
             impersonate="chrome120",
             proxy=self.proxy,
-            headers=self.headers
+            headers=self.headers,
+            verify=False  # Отключаем проверку SSL
         )
         return self
 
@@ -110,14 +118,23 @@ class PyaterochkaAPI:
         }
         
         try:
-            response = await self.session.get(url, params=params)
+            response = await self.session.get(
+                url, 
+                params=params,
+                verify=False  # Отключаем проверку SSL
+            )
             response.raise_for_status()
             stores = response.json()
             
-            if stores and len(stores) > 0:
-                return stores[0]  # возвращаем первый магазин
-            return None
+            if not stores:
+                logger.warning(f"No stores found for coordinates: {latitude}, {longitude}")
+                return None
+                
+            return stores[0]  # возвращаем первый магазин
             
+        except RequestsError as e:
+            logger.error(f"Curl error finding store: {str(e)}")
+            return None
         except Exception as e:
             logger.error(f"Error finding store: {str(e)}")
             return None
@@ -197,11 +214,18 @@ async def check_delivery(loc: Location):
     try:
         store = await pyaterochka_api.find_store(loc.lat, loc.lon)
         if not store:
-            raise HTTPException(status_code=404, detail="Магазин не найден")
+            logger.warning(f"Store not found for coordinates: {loc.lat}, {loc.lon}")
+            raise HTTPException(
+                status_code=404, 
+                detail="Магазин не найден для указанных координат"
+            )
             
         catalog = await pyaterochka_api.get_categories()
         if not catalog:
-            raise HTTPException(status_code=404, detail="Категории не найдены")
+            raise HTTPException(
+                status_code=404, 
+                detail="Не удалось загрузить категории товаров"
+            )
             
         flattened = categories.flatten_categories(catalog)
         categories.flat_categories.clear()
@@ -212,8 +236,14 @@ async def check_delivery(loc: Location):
             "store": store,
             "categories": catalog
         }
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal server error: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500, 
+            detail="Внутренняя ошибка сервера при обработке запроса"
+        )
 
 @api_router.post("/get-products")
 async def get_products(data: ProductQuery, limit: int = 100):
