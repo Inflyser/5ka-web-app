@@ -3,6 +3,7 @@ import aiohttp
 import asyncio
 import logging
 import os
+import time
 
 from pyaterochka_api import Pyaterochka
 from pyaterochka_api import PurchaseMode
@@ -53,12 +54,35 @@ ssl_context = ssl.create_default_context()
 ssl_context.check_hostname = False
 ssl_context.verify_mode = ssl.CERT_NONE
 
-class PatchedSession(aiohttp.ClientSession):
-    def __init__(self, *args, **kwargs):
-        kwargs.setdefault("connector", aiohttp.TCPConnector(ssl=ssl_context))
-        super().__init__(*args, **kwargs)
+class PyaterochkaSession:
+    def __init__(self):
+        self._session = None
+        self._last_reset = 0
 
-aiohttp.ClientSession = PatchedSession
+    async def _create_new_session(self):
+        if self._session:
+            await self._session.close()
+        self._session = aiohttp.ClientSession()
+        self._last_reset = time.time()
+
+    async def products_list(self, **kwargs):
+        await self._ensure_fresh_session()
+        params = {
+            **kwargs,
+            "_": int(time.time()),  # Уникальный параметр
+        }
+        async with self._session.get(
+            "https://api.pyaterochka.ru/products",
+            params=params,
+            headers={"User-Agent": f"UserAgent-{random.randint(100,999)}"}
+        ) as response:
+            return await response.json()
+
+    async def _ensure_fresh_session(self):
+        if not self._session or time.time() - self._last_reset > 300:
+            await self._create_new_session()
+
+
 
 # === TELEGRAM BOT ===
 def webapp_builder() -> InlineKeyboardBuilder:
@@ -143,6 +167,8 @@ async def check_delivery(loc: Location):
             mode=PurchaseMode.DELIVERY
         )
         flattened = categories.flatten_categories(catalog)
+        
+        # Обновляем хранилище
         categories.flat_categories.clear()
         categories.flat_categories.extend(flattened)
         return {
