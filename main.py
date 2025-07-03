@@ -216,3 +216,4 @@ async def telegram_webhook(update: dict):
 app.include_router(api_router)
 
 app.include_router(categories.router)
+app.include_router(products.router)
