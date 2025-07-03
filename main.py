@@ -1,144 +1,201 @@
-from curl_cffi import requests
-import json
-import re
-from typing import Optional, Dict, List
-import time
-from urllib.parse import urljoin
+import ssl
+import aiohttp
+import asyncio
+import logging
+import os
 
-class DynamicPyaterochkaAPI:
-    def __init__(self):
-        self.base_url = "https://5ka.ru"
-        self.api_version = self._detect_api_version()
-        self.session = requests.Session()
-        self._init_session()
-        self.last_request_time = 0
-        self.request_delay = 1.5  # Задержка между запросами
+from pyaterochka_api import Pyaterochka
+from pyaterochka_api import PurchaseMode
+from typing import Optional
 
-    def _detect_api_version(self) -> str:
-        """Автоматическое определение актуальной версии API"""
-        try:
-            response = requests.get(self.base_url, impersonate="chrome110")
-            # Ищем версию API в JavaScript коде страницы
-            match = re.search(r'apiVersion:\s*["\'](v\d+)["\']', response.text)
-            return match.group(1) if match else "v3"
-        except:
-            return "v3"
-
-    def _init_session(self):
-        """Динамическая инициализация сессии с заголовками"""
-        self.session.headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "Accept": "application/json, text/plain, */*",
-            "Accept-Language": "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
-            "X-Requested-With": "XMLHttpRequest",
-        }
-        self.session.verify = False
-
-    def _get_dynamic_headers(self) -> Dict:
-        """Генерация динамических заголовков для каждого запроса"""
-        return {
-            "X-Timestamp": str(int(time.time())),
-            "X-Client": "web_dynamic_parser",
-            "X-Api-Version": self.api_version,
-        }
-
-    def _rate_limit(self):
-        """Контроль частоты запросов"""
-        elapsed = time.time() - self.last_request_time
-        if elapsed < self.request_delay:
-            time.sleep(self.request_delay - elapsed)
-        self.last_request_time = time.time()
-
-    def _make_request(self, endpoint: str, params: Optional[Dict] = None) -> Optional[Dict]:
-        """Умный запрос с автоматической адаптацией"""
-        self._rate_limit()
-        
-        url = urljoin(self.base_url, f"/api/{self.api_version}/{endpoint}")
-        headers = {**self.session.headers, **self._get_dynamic_headers()}
-        
-        try:
-            response = self.session.get(
-                url,
-                params=params or {},
-                headers=headers,
-                impersonate="chrome110"
-            )
-            
-            # Автоматическое обновление API версии при 404
-            if response.status_code == 404:
-                self.api_version = self._detect_api_version()
-                return self._make_request(endpoint, params)
-                
-            response.raise_for_status()
-            return response.json()
-            
-        except requests.RequestsError as e:
-            print(f"Request failed: {e}")
-            return None
-
-    def smart_store_search(self, lat: float, lon: float) -> Optional[Dict]:
-        """Умный поиск магазина с автоматическим выбором endpoint"""
-        endpoints = [
-            f"stores/?lat={lat}&lon={lon}",
-            f"orders/stores/?lat={lat}&lon={lon}",
-            f"shops/?lat={lat}&lon={lon}"
-        ]
-        
-        for endpoint in endpoints:
-            result = self._make_request(endpoint)
-            if result and isinstance(result, list) and len(result) > 0:
-                return result[0]
-            elif result and isinstance(result, dict) and 'results' in result:
-                return result['results'][0] if result['results'] else None
-                
-        return None
-
-    def smart_get_products(self, store_id: str, category_id: str) -> Optional[List[Dict]]:
-        """Адаптивный метод получения товаров"""
-        params = {
-            "store_id": store_id,
-            "category_id": category_id,
-            "mode": "delivery",
-            "limit": 100
-        }
-        
-        # Пробуем разные варианты endpoints
-        endpoints = [
-            "products/",
-            "items/",
-            "goods/"
-        ]
-        
-        for endpoint in endpoints:
-            result = self._make_request(endpoint, params)
-            if result:
-                return result
-                
-        return None
-
-# Пример использования в FastAPI роутерах
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import FastAPI, APIRouter, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from contextlib import asynccontextmanager
 from pydantic import BaseModel
+from dotenv import load_dotenv
 
-router = APIRouter()
 
-def get_api():
-    return DynamicPyaterochkaAPI()
+from router import categories
+from router import products
 
+from aiogram import Bot, Dispatcher, Router
+from aiogram.client.default import DefaultBotProperties
+from aiogram.enums import ParseMode
+from aiogram.filters import CommandStart
+from aiogram.types import Message, WebAppInfo, Update
+from aiogram.utils.keyboard import InlineKeyboardBuilder
+from aiogram.exceptions import TelegramForbiddenError
+
+import random
+import string
+
+# === НАСТРОЙКИ ===
+load_dotenv()
+
+def generate_random_session_id(length: int = 8) -> str:
+    return ''.join(random.choices(string.ascii_lowercase + string.digits, k=length))
+
+def get_toolip_proxy() -> str:
+    password = os.getenv("TOOLIP_PROXY")  
+    session = generate_random_session_id()
+    proxy = f"http://tl-85a86a8ebc70066fa6c97c81acd72f2b9a06dedcca4addf6e9b2395ce556bd41-country-ru-session-{session}:{password}@proxy.toolip.io:31111"
+    print(proxy)
+    return proxy
+
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+FRONTEND_URL = "https://5ka-front.netlify.app"
+WEBHOOK_URL = "https://fiveka-web-app.onrender.com/telegram"
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# === SSL PATCH ДЛЯ PYATEROCHKA ===
+ssl_context = ssl.create_default_context()
+ssl_context.check_hostname = False
+ssl_context.verify_mode = ssl.CERT_NONE
+
+class PatchedSession(aiohttp.ClientSession):
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("connector", aiohttp.TCPConnector(ssl=ssl_context))
+        super().__init__(*args, **kwargs)
+
+aiohttp.ClientSession = PatchedSession
+
+# === TELEGRAM BOT ===
+def webapp_builder() -> InlineKeyboardBuilder:
+    builder = InlineKeyboardBuilder()
+    builder.button(
+        text="Click",
+        web_app=WebAppInfo(url=f"{FRONTEND_URL}/index.html")
+    )
+    return builder.as_markup()
+
+tg_router = Router()
+
+@tg_router.message(CommandStart())
+async def start(message: Message):
+    try:
+        await message.answer(
+            "Starting - Bot correct!",
+            reply_markup=webapp_builder()
+        )
+    except TelegramForbiddenError:
+        logger.warning(f"Пользователь {message.from_user.id} заблокировал бота.")
+
+bot = Bot(
+    BOT_TOKEN,
+    default=DefaultBotProperties(parse_mode=ParseMode.HTML)
+)
+dp = Dispatcher()
+dp.include_router(tg_router)
+
+pyaterochka_session = None
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+
+    global pyaterochka_session
+    pyaterochka_session = Pyaterochka(
+        proxy=get_toolip_proxy(),
+        debug=True,
+        autoclose_browser=False,
+        trust_env=False
+    )
+    await pyaterochka_session.__aenter__()
+    
+    yield  
+
+# === FASTAPI ===
+app = FastAPI(lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[FRONTEND_URL],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+@app.get("/ping")
+async def ping():
+    return JSONResponse(content={"status": "ok", "message": "Backend is alive!"})
+
+# === API ДЛЯ ДОСТАВКИ ЧЕРЕЗ PYATEROCHKA_API ===
 class Location(BaseModel):
     lat: float
     lon: float
 
-@router.post("/dynamic/stores")
-def find_store(loc: Location, api: DynamicPyaterochkaAPI = Depends(get_api)):
-    store = api.smart_store_search(loc.lat, loc.lon)
-    if not store:
-        raise HTTPException(404, "Магазин не найден")
-    return store
+# Схема для второго запроса
+class ProductQuery(BaseModel):
+    store_id: str
+    category_id: str
 
-@router.get("/dynamic/products/{store_id}/{category_id}")
-def get_products(store_id: str, category_id: str, api: DynamicPyaterochkaAPI = Depends(get_api)):
-    products = api.smart_get_products(store_id, category_id)
-    if not products:
-        raise HTTPException(404, "Товары не найдены")
-    return products
+api_router = APIRouter()
+
+@api_router.post("/get-store-and-categories")
+async def check_delivery(loc: Location):
+    try:
+        store = await pyaterochka_session.find_store(longitude=loc.lon, latitude=loc.lat)
+        if not store:
+            raise HTTPException(status_code=404, detail="Магазин не найден")
+            
+        catalog = await pyaterochka_session.categories_list(
+            subcategories=True,
+            mode=PurchaseMode.DELIVERY
+        )
+        flattened = categories.flatten_categories(catalog)
+        categories.flat_categories.clear()
+        categories.flat_categories.extend(flattened)
+        return {
+            "status": "ok",
+            "store": store,
+            "categories": catalog
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+
+@api_router.post("/get-products")
+async def get_products(data: ProductQuery, limit: int = 100):
+    try:
+        raw_products = await pyaterochka_session.products_list(
+            category_id=data.category_id,
+            limit=limit,
+            mode=PurchaseMode.DELIVERY,
+            sap_code_store_id=data.store_id
+        )
+        
+        processed_data = products.process_products(raw_products)
+        
+        # Обновляем хранилище
+        products.products_store.clear()
+        products.products_store.extend(processed_data["products"])
+        
+        return JSONResponse({
+            "status": "success",
+            "count": len(processed_data["products"]),
+            "data": processed_data
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting products: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to get products"
+        )
+    
+   
+
+
+@app.post("/telegram")
+async def telegram_webhook(update: dict):
+    telegram_update = Update.model_validate(update)
+    await dp.feed_update(bot, telegram_update)
+    return {"ok": True}
+
+# === Роутеры ===
+app.include_router(api_router)
+
+app.include_router(categories.router)
+app.include_router(products.router)
