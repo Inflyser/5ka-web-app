@@ -63,7 +63,7 @@ body {
 }
 
 .subcategory-card {
-    background-color: #f9f9f9;
+    /* background-color: #f9f9f9; */
     border-radius: 16px;
     padding: 10px 10px 0 10px; /* Убрал нижний паддинг */
     display: flex;
