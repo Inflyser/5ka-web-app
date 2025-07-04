@@ -147,3 +147,14 @@ body {
   object-fit: contain;
   margin-left: 8px;
 }
+
+.subcategory-card {
+    transition: transform 0.2s;
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.subcategory-card:hover {
+    transform: scale(1.03);
+}
