@@ -39,7 +39,7 @@ def generate_random_session_id(length: int = 8) -> str:
 def get_toolip_proxy() -> str:
     password = os.getenv("TOOLIP_PROXY")  
     session = generate_random_session_id()
-    proxy = f"http://Royal001-country-ru-session-{session}:SmallLike1!@109.69.62.127:42361"
+    proxy = f"http://Royal001:SmallLike1!@109.69.62.127:42361"
     print(proxy)
     return proxy
     # "user:password@host:port"
