@@ -27,11 +27,23 @@ export function renderCategories(rawCategories, searchQuery = '', onCategoryClic
         matchedSubs.forEach(sub => {
             const card = document.createElement('div');
             card.className = 'subcategory-card';
+            
+            // Добавляем градиентный фон и цвет текста
+            if (sub.gradient && sub.gradient.length === 2) {
+                const [startColor, endColor] = sub.gradient;
+                card.style.background = `linear-gradient(135deg, ${startColor}, ${endColor})`;
+                
+                // Если есть цвет текста - применяем его
+                if (sub.title_color) {
+                    card.style.color = sub.title_color;
+                }
+            }
 
             const img = document.createElement('img');
             img.className = 'subcategory-image';
-            img.src = sub.image_link;
+            img.src = sub.image_link || 'placeholder.png'; // fallback изображение
             img.alt = sub.name;
+            img.onerror = () => { img.src = 'placeholder.png'; }; // обработчик ошибок загрузки
 
             const name = document.createElement('div');
             name.className = 'subcategory-name';
@@ -40,7 +52,6 @@ export function renderCategories(rawCategories, searchQuery = '', onCategoryClic
             card.appendChild(name);
             card.appendChild(img);
 
-            // 👉 Клик вызывает внешний обработчик
             card.addEventListener('click', () => {
                 onCategoryClick?.(sub.id);
             });
