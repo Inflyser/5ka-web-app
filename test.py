@@ -17,12 +17,18 @@ async def fetch_pyaterochka_stores(lat: float, lon: float):
         "Origin": "https://5ka.ru",
     }
 
-    async with AsyncSession(impersonate="chrome120") as session:
+    # Настройки прокси (пример)
+    proxy = 'http://tl-85a86a8ebc70066fa6c97c81acd72f2b9a06dedcca4addf6e9b2395ce556bd41-country-ru-session-23424:ce35zon73c4c@proxy.toolip.io:31111'
+
+    async with AsyncSession(impersonate="chrome120", verify=False) as session:
         try:
+            # Обновляем заголовки сессии
+            session.headers.update(headers)
+            
             response = await session.get(
                 url,
                 params=params,
-                headers=headers
+                proxy=proxy  # Добавляем прокси здесь
             )
             response.raise_for_status()
             return response.json()
@@ -43,4 +49,3 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-    
