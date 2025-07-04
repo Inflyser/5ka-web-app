@@ -39,9 +39,12 @@ def generate_random_session_id(length: int = 8) -> str:
 def get_toolip_proxy() -> str:
     password = os.getenv("TOOLIP_PROXY")  
     session = generate_random_session_id()
-    proxy = f"http://tl-85a86a8ebc70066fa6c97c81acd72f2b9a06dedcca4addf6e9b2395ce556bd41-country-ru-session-{session}:{password}@proxy.toolip.io:31111"
+    proxy = f"http://VLERnRCJlSpd:tVsh39YBvN@65.109.79.15:25007"
     print(proxy)
     return proxy
+    # "user:password@host:port"
+    # http://VLERnRCJlSpd:tVsh39YBvN@65.109.79.15:25007
+    # http://tl-85a86a8ebc70066fa6c97c81acd72f2b9a06dedcca4addf6e9b2395ce556bd41-country-ru-session-{session}:{password}@proxy.toolip.io:31111"
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 FRONTEND_URL = "https://5ka-front.netlify.app"
