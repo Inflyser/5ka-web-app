@@ -18,7 +18,7 @@ async def fetch_pyaterochka_stores(lat: float, lon: float):
     }
 
     # Настройки прокси (пример)
-    proxy = 'http://tl-85a86a8ebc70066fa6c97c81acd72f2b9a06dedcca4addf6e9b2395ce556bd41-country-ru-session-23424:ce35zon73c4c@proxy.toolip.io:31111'
+    proxy = 'http://tl-85a86a8ebc70066fa6c97c81acd72f2b9a06dedcca4addf6e9b2395ce556bd41-country-ru-session-1324:ce35zon73c4c@proxy.toolip.io:31111'
 
     async with AsyncSession(impersonate="chrome120", verify=False) as session:
         try:

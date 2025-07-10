@@ -1,10 +1,10 @@
 import asyncio
 from curl_cffi.requests import AsyncSession
 from fastapi import FastAPI, HTTPException
+from contextlib import asynccontextmanager
 import random
 import json
-
-app = FastAPI()
+import time
 
 # Генерация случайных User-Agent
 def get_random_user_agent():
@@ -19,7 +19,7 @@ async def fetch_pyaterochka_stores(lat: float, lon: float):
     params = {
         "lat": lat,
         "lon": lon,
-        "_": str(int(time.time() * 1000))  # Добавляем timestamp для избежания кеширования
+        "_": str(int(time.time() * 1000))
     }
     
     headers = {
@@ -31,56 +31,57 @@ async def fetch_pyaterochka_stores(lat: float, lon: float):
         "Sec-Ch-Ua": '"Google Chrome";v="123", "Not:A-Brand";v="8", "Chromium";v="123"',
         "Sec-Ch-Ua-Mobile": "?0",
         "Sec-Ch-Ua-Platform": '"Windows"',
-        "Sec-Fetch-Dest": "empty",
-        "Sec-Fetch-Mode": "cors",
-        "Sec-Fetch-Site": "same-site",
     }
 
     proxies = {
-        "http": "http://tl-85a86a8ebc70066fa6c97c81acd72f2b9a06dedcca4addf6e9b2395ce556bd41-country-ru-session-23424:ce35zon73c4c@proxy.toolip.io:31111",
-        "https": "http://tl-85a86a8ebc70066fa6c97c81acd72f2b9a06dedcca4addf6e9b2395ce556bd41-country-ru-session-23424:ce35zon73c4c@proxy.toolip.io:31111"
+        "http": "http://tl-85a86a8ebc70066fa6c97c81acd72f2b9a06dedcca4addf6e9b2395ce556bd41-country-ru-session-001334:ce35zon73c4c@proxy.toolip.io:31111",
+        "https": "http://tl-85a86a8ebc70066fa6c97c81acd72f2b9a06dedcca4addf6e9b2395ce556bd41-country-ru-session-001245:ce35zon73c4c@proxy.toolip.io:31111"
     }
 
-    # Добавляем задержку для имитации человеческого поведения
     await asyncio.sleep(random.uniform(0.5, 1.5))
 
-    try:
-        async with AsyncSession(
-            impersonate="chrome120",
-            timeout=30,
-            verify=False  # Отключаем проверку SSL для избежания проблем с сертификатами
-        ) as session:
-            response = await session.get(
-                url,
-                params=params,
-                headers=headers,
-                proxies=proxies,
-            )
-            
-            # Проверяем статус код и наличие ожидаемых данных
-            if response.status_code != 200:
-                raise HTTPException(
-                    status_code=response.status_code,
-                    detail=f"API returned status code {response.status_code}"
-                )
-            
-            # Проверяем, что ответ содержит JSON
-            try:
-                data = response.json()
-                if not data:
-                    raise ValueError("Empty response from API")
-                return data
-            except json.JSONDecodeError:
-                raise HTTPException(
-                    status_code=500,
-                    detail="Invalid JSON response from API"
-                )
-                
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Request failed: {str(e)}"
+    async with AsyncSession(
+        impersonate="chrome120",
+        timeout=30,
+        verify=False
+    ) as session:
+        response = await session.get(
+            url,
+            params=params,
+            headers=headers,
+            proxies=proxies,
         )
+        
+        if response.status_code != 200:
+            raise HTTPException(
+                status_code=response.status_code,
+                detail=f"API returned status code {response.status_code}"
+            )
+        
+        try:
+            data = response.json()
+            if not data:
+                raise ValueError("Empty response from API")
+            return data
+        except json.JSONDecodeError:
+            raise HTTPException(
+                status_code=500,
+                detail="Invalid JSON response from API"
+            )
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Автоматический запрос при старте приложения
+    print("- Запрашиваем данные Пятерочки...")
+    try:
+        result = await fetch_pyaterochka_stores(52.95417364044243, 36.09554340003643)
+        print("✅ Данные успешно получены:", json.dumps(result, indent=2, ensure_ascii=False))
+    except Exception as e:
+        print(f"❌ Ошибка: {str(e)}")
+    yield  # Здесь приложение работает
+    # Код для завершения (если нужно)
+
+app = FastAPI(lifespan=lifespan)
 
 @app.get("/get_stores")
 async def get_stores(lat: float = 52.95417364044243, lon: float = 36.09554340003643):
@@ -96,5 +97,4 @@ async def get_stores(lat: float = 52.95417364044243, lon: float = 36.09554340003
 
 if __name__ == "__main__":
     import uvicorn
-    import time
     uvicorn.run(app, host="0.0.0.0", port=8000)
